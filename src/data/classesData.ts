@@ -467,12 +467,12 @@ export const TUTORING_CLASSES: TutoringClass[] = [
   }
 ];
 
-// Helper to normalize tags for robust matching (handling curly vs straight quotes, casing, whitespace)
+// Helper to normalize tags for robust matching (handling curly quotes, backticks, casing, whitespace)
 export function normalizeTag(tag: string): string {
   return tag
     .trim()
     .toLowerCase()
-    .replace(/[‘’]/g, "'")
+    .replace(/[`‘’]/g, "'")
     .replace(/\s+/g, ' ');
 }
 

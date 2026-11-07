@@ -58,7 +58,9 @@ export default function App() {
     }
   }, [isDark]);
 
-  // Sync server-side CRM status on mount
+  const [hasLocationId, setHasLocationId] = useState(true);
+
+  // Sync server-side CRM status and load real GHL students on mount
   useEffect(() => {
     fetch('/api/crm/status')
       .then(res => res.json())
@@ -67,13 +69,24 @@ export default function App() {
           setApiConfig(prev => ({
             ...prev,
             status: 'connected',
-            provider: 'TutorCruncher',
+            provider: 'GoHighLevel',
             endpoint: '/api/attendance/sync'
           }));
+          setHasLocationId(Boolean(data.hasLocationId));
         }
       })
-      .catch(() => {
-        // Dev fallback
+      .catch(() => {});
+
+    // Automatically pull real contacts from GoHighLevel
+    fetch('/api/contacts')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.students) && data.students.length > 0) {
+          handleImportCrmStudents(data.students);
+        }
+      })
+      .catch((err) => {
+        console.warn('Initial GHL contacts sync fallback', err);
       });
   }, []);
 
@@ -128,6 +141,42 @@ export default function App() {
     showToast(`Attendance register successfully saved & synced for ${className}`);
   };
 
+  const handleImportCrmStudents = (crmStudents: Student[]) => {
+    setStudents(crmStudents);
+    saveStudents(crmStudents);
+    setHasLocationId(true);
+
+    // Update sessions to enroll the real students with matching tags
+    const updatedSessions = sessions.map(sess => {
+      // Find students that have this session's tag
+      const matched = crmStudents.filter(stu => 
+        stu.tags.some(t => {
+          const cleanT = t.trim().toLowerCase().replace(/[‘’]/g, "'");
+          const cleanSessTag = sess.classTag.trim().toLowerCase().replace(/[‘’]/g, "'");
+          return cleanT === cleanSessTag || cleanT.includes(cleanSessTag) || cleanSessTag.includes(cleanT);
+        })
+      );
+
+      const newAttendance: StudentAttendanceEntry[] = matched.map(stu => {
+        const existing = sess.attendance?.find(a => a.studentId === stu.id);
+        return existing || {
+          studentId: stu.id,
+          studentName: stu.name,
+          status: 'present'
+        };
+      });
+
+      return {
+        ...sess,
+        attendance: newAttendance
+      };
+    });
+
+    setSessions(updatedSessions);
+    saveSessions(updatedSessions);
+    showToast(`Loaded ${crmStudents.length} real students from GoHighLevel CRM!`);
+  };
+
   const handleUpdateStudents = (updated: Student[]) => {
     setStudents(updated);
     saveStudents(updated);
@@ -152,6 +201,24 @@ export default function App() {
         isDark={isDark}
         onToggleTheme={() => setIsDark(!isDark)}
       />
+
+      {/* Location ID sync prompt banner if not yet provided */}
+      {!hasLocationId && (
+        <div className="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>
+              <strong>GoHighLevel Connected:</strong> Currently showing baseline class roster. Enter your GoHighLevel <strong>Location ID</strong> to pull your live CRM contacts and tags onto this page.
+            </span>
+          </div>
+          <button
+            onClick={() => setIsApiModalOpen(true)}
+            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-md shadow-xs shrink-0 transition-colors text-xs self-start sm:self-auto"
+          >
+            Pull Live CRM Contacts
+          </button>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -217,6 +284,7 @@ export default function App() {
         onClose={() => setIsApiModalOpen(false)}
         config={apiConfig}
         onSaveConfig={handleSaveApiConfig}
+        onImportContacts={handleImportCrmStudents}
       />
 
       {/* Toast Notification */}

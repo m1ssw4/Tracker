@@ -2,9 +2,9 @@ import { LessonSession, StudentAttendanceEntry, ApiConfig, Student } from '../ty
 import { TUTORING_CLASSES } from './classesData';
 import { INITIAL_STUDENTS, getStudentsByTag } from './mockStudents';
 
-const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_v1';
+const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v2';
 const STORAGE_KEY_API_CONFIG = 'tutortrack_api_config_2627_v1';
-const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_v1';
+const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v2';
 
 // Map day of week to date offset relative to Monday 2026-11-02 (Past week) and Monday 2026-11-09 (Current/Upcoming week)
 const DAY_OFFSETS: Record<string, number> = {
