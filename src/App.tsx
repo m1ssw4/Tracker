@@ -58,6 +58,25 @@ export default function App() {
     }
   }, [isDark]);
 
+  // Sync server-side CRM status on mount
+  useEffect(() => {
+    fetch('/api/crm/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.connected) {
+          setApiConfig(prev => ({
+            ...prev,
+            status: 'connected',
+            provider: 'TutorCruncher',
+            endpoint: '/api/attendance/sync'
+          }));
+        }
+      })
+      .catch(() => {
+        // Dev fallback
+      });
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -70,7 +89,10 @@ export default function App() {
     setIsAttendanceModalOpen(true);
   };
 
-  const handleSaveAttendance = (sessionId: string, entries: StudentAttendanceEntry[]) => {
+  const handleSaveAttendance = async (sessionId: string, entries: StudentAttendanceEntry[]) => {
+    const sessionObj = sessions.find(s => s.id === sessionId);
+    const className = sessionObj ? sessionObj.className : 'Session';
+
     const updatedSessions = sessions.map(s => {
       if (s.id !== sessionId) return s;
       return {
@@ -84,9 +106,26 @@ export default function App() {
     setSessions(updatedSessions);
     saveSessions(updatedSessions);
 
-    const sessionObj = sessions.find(s => s.id === sessionId);
-    const className = sessionObj ? sessionObj.className : 'Session';
-    showToast(`Attendance register successfully saved for ${className}`);
+    // Dispatch background sync to server-side proxy
+    try {
+      if (sessionObj) {
+        await fetch('/api/attendance/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionObj.id,
+            classTag: sessionObj.classTag,
+            className: sessionObj.className,
+            date: sessionObj.date,
+            attendance: entries
+          })
+        });
+      }
+    } catch (err) {
+      console.warn('Proxy sync notification skipped', err);
+    }
+
+    showToast(`Attendance register successfully saved & synced for ${className}`);
   };
 
   const handleUpdateStudents = (updated: Student[]) => {

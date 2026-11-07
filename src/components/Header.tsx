@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   isDark,
   onToggleTheme
 }) => {
-  const isApiConnected = apiConfig.apiKey.trim().length > 0;
+  const isApiConnected = apiConfig.status === 'connected' || apiConfig.apiKey.trim().length > 0;
 
   const navItems: { id: ActiveTab; label: string }[] = [
     { id: 'schedules', label: 'Schedules' },
