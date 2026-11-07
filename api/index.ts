@@ -145,15 +145,14 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
 
     const mappedStudents = ghlContacts.map((c: any, index: number) => {
       // The student name is stored in "Student First & Last Name" custom field: w8IiqpaheyGSIUnG0S61
-      const studentField = (c.customFields || []).find((f: any) => 
-        f.id === 'w8IiqpaheyGSIUnG0S61' || // Student First & Last Name
-        f.id === 't4o6XYzWSW2vqxJdtBzi' || // Child's Full Name
-        f.id === 'uAEjr7NT6blcALwFUbkK' || // Child's Name
-        f.id === 'CfyMHjQZEFftJ2oKO0cS'
-      );
+      // Fallbacks: t4o6XYzWSW2vqxJdtBzi ("Child's Full Name") and uAEjr7NT6blcALwFUbkK ("Child's Name")
+      // Do NOT check CfyMHjQZEFftJ2oKO0cS ("Setter Called") as that is internal sales staff (e.g. Rebecca Collins)
+      const studentField = (c.customFields || []).find((f: any) => f.id === 'w8IiqpaheyGSIUnG0S61');
+      const childFullNameField = (c.customFields || []).find((f: any) => f.id === 't4o6XYzWSW2vqxJdtBzi');
+      const childNameField = (c.customFields || []).find((f: any) => f.id === 'uAEjr7NT6blcALwFUbkK');
 
-      const studentName = studentField?.value?.trim() || c.contactName || 'Student';
       const parentName = c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Parent';
+      const studentName = studentField?.value?.trim() || childFullNameField?.value?.trim() || childNameField?.value?.trim() || `${parentName} (Student)`;
       const tags = Array.isArray(c.tags) ? c.tags : [];
       
       const hasYear11 = tags.some((t: string) => t.toLowerCase().includes('year 11') || t.toLowerCase().includes('y11'));
