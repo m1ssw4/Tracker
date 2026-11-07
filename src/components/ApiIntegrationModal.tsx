@@ -133,11 +133,21 @@ export const ApiIntegrationModal: React.FC<ApiIntegrationModalProps> = ({
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800 space-y-1">
-              <span className="text-slate-500 dark:text-slate-400">Protection Layer</span>
-              <p className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Server-Side Proxy
+              <span className="text-slate-500 dark:text-slate-400">Deployment Platform</span>
+              <p className="font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Vercel Serverless
               </p>
             </div>
+          </div>
+
+          {/* Vercel Environment Notice */}
+          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30 text-xs text-slate-600 dark:text-slate-400">
+            <p className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5">
+              Deploying to Vercel:
+            </p>
+            <p>
+              In your Vercel Dashboard, navigate to <strong>Settings &gt; Environment Variables</strong> and add <code className="font-mono text-indigo-600 dark:text-indigo-400 font-semibold">CRM_API_KEY</code> with your key. Vercel automatically deploys the <code className="font-mono">/api</code> folder as a serverless proxy.
+            </p>
           </div>
 
           {/* Masked Key Display */}
