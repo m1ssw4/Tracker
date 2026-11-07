@@ -1,0 +1,453 @@
+import React, { useState, useMemo } from 'react';
+import { Student, LessonSession } from '../types';
+import { TUTORING_CLASSES, normalizeTag } from '../data/classesData';
+import { 
+  Search, 
+  GraduationCap, 
+  Phone, 
+  Mail, 
+  Tag as TagIcon, 
+  Calendar, 
+  Plus, 
+  Check, 
+  Copy, 
+  X,
+  History,
+  AlertCircle
+} from 'lucide-react';
+
+interface StudentsViewProps {
+  students: Student[];
+  onUpdateStudents: (updated: Student[]) => void;
+  sessions: LessonSession[];
+}
+
+export const StudentsView: React.FC<StudentsViewProps> = ({
+  students,
+  onUpdateStudents,
+  sessions
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [yearFilter, setYearFilter] = useState<'All' | '10' | '11'>('All');
+  const [tagFilter, setTagFilter] = useState<string>('All');
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<Student | null>(null);
+  const [editingStudentTags, setEditingStudentTags] = useState<Student | null>(null);
+  const [copiedTag, setCopiedTag] = useState<string | null>(null);
+
+  // All 27 tags for filter dropdown
+  const allTags = useMemo(() => TUTORING_CLASSES.map(c => c.tag), []);
+
+  const handleCopyTag = (tag: string) => {
+    navigator.clipboard.writeText(tag);
+    setCopiedTag(tag);
+    setTimeout(() => setCopiedTag(null), 2000);
+  };
+
+  // Compute attendance stats per student across past sessions
+  const studentAttendanceStats = useMemo(() => {
+    const stats: Record<string, { total: number; attended: number; late: number; absent: number; rate: number }> = {};
+
+    students.forEach(stu => {
+      let total = 0;
+      let attended = 0;
+      let late = 0;
+      let absent = 0;
+
+      sessions.forEach(sess => {
+        if (!sess.isAttendanceSubmitted) return;
+        const entry = sess.attendance?.find(a => a.studentId === stu.id);
+        if (entry) {
+          total++;
+          if (entry.status === 'present') attended++;
+          else if (entry.status === 'late') { attended++; late++; }
+          else if (entry.status === 'absent') absent++;
+        }
+      });
+
+      const rate = total > 0 ? Math.round((attended / total) * 100) : 100;
+      stats[stu.id] = { total, attended, late, absent, rate };
+    });
+
+    return stats;
+  }, [students, sessions]);
+
+  // Filter students
+  const filteredStudents = useMemo(() => {
+    return students.filter(stu => {
+      if (yearFilter !== 'All' && stu.yearGroup.toString() !== yearFilter) return false;
+
+      if (tagFilter !== 'All') {
+        const normFilter = normalizeTag(tagFilter);
+        const hasTag = stu.tags.some(t => normalizeTag(t) === normFilter);
+        if (!hasTag) return false;
+      }
+
+      if (searchQuery.trim().length > 0) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = stu.name.toLowerCase().includes(q);
+        const matchesEmail = stu.email.toLowerCase().includes(q);
+        const matchesParent = stu.parentName.toLowerCase().includes(q);
+        const matchesTag = stu.tags.some(t => t.toLowerCase().includes(q));
+        if (!matchesName && !matchesEmail && !matchesParent && !matchesTag) return false;
+      }
+
+      return true;
+    });
+  }, [students, yearFilter, tagFilter, searchQuery]);
+
+  // Manage tags on student
+  const handleToggleTag = (tagToAddOrRemove: string) => {
+    if (!editingStudentTags) return;
+    const exists = editingStudentTags.tags.some(t => normalizeTag(t) === normalizeTag(tagToAddOrRemove));
+    let nextTags: string[];
+    if (exists) {
+      nextTags = editingStudentTags.tags.filter(t => normalizeTag(t) !== normalizeTag(tagToAddOrRemove));
+    } else {
+      nextTags = [...editingStudentTags.tags, tagToAddOrRemove];
+    }
+
+    const updated = { ...editingStudentTags, tags: nextTags };
+    setEditingStudentTags(updated);
+
+    onUpdateStudents(students.map(s => s.id === updated.id ? updated : s));
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Control bar */}
+      <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+        
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by student name, parent contact, or class tag..."
+              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400">Year:</span>
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+              {(['All', '11', '10'] as const).map(yr => (
+                <button
+                  key={yr}
+                  onClick={() => setYearFilter(yr)}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                    yearFilter === yr
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-medium shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {yr === 'All' ? 'All Years' : `Year ${yr}`}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Filter by tag dropdown */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400">Filter by Class Tag:</span>
+            <select
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono max-w-xs truncate"
+            >
+              <option value="All">All Tags (Show All Students)</option>
+              {allTags.map(t => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            {tagFilter !== 'All' && (
+              <button
+                onClick={() => setTagFilter('All')}
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                Clear Tag Filter
+              </button>
+            )}
+          </div>
+
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+            {filteredStudents.length} of {students.length} students enrolled
+          </div>
+        </div>
+
+      </div>
+
+      {/* Students Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {filteredStudents.length === 0 ? (
+          <div className="col-span-full p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500">
+            No students match your criteria.
+          </div>
+        ) : (
+          filteredStudents.map((stu) => {
+            const stats = studentAttendanceStats[stu.id] || { total: 0, attended: 0, late: 0, absent: 0, rate: 100 };
+            
+            return (
+              <div
+                key={stu.id}
+                className="p-5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between space-y-4"
+              >
+                {/* Header & Basic Info */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm shrink-0 ${stu.avatarColor}`}>
+                      {stu.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                          {stu.name}
+                        </h3>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                          Year {stu.yearGroup}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {stu.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Attendance Rate Pill (Clean unboxed text) */}
+                  <div className="text-right">
+                    <span className="text-[11px] text-slate-400 uppercase tracking-wider block">Attendance</span>
+                    <span className={`text-base font-bold font-mono ${
+                      stats.rate >= 90 ? 'text-emerald-600 dark:text-emerald-400' :
+                      stats.rate >= 75 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
+                    }`}>
+                      {stats.rate}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Target Grades & Contact */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg text-xs space-y-2 border border-slate-100 dark:border-slate-800/60">
+                  <div className="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
+                    <span className="flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
+                      <strong>Targets:</strong> {Object.entries(stu.targetGrades).map(([subj, gr]) => `${subj} (Gr ${gr})`).join(' · ')}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                    <span>Parent: {stu.parentName}</span>
+                    <span>·</span>
+                    <span className="flex items-center gap-1 font-mono">
+                      <Phone className="w-3 h-3" /> {stu.parentPhone}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Assigned Tags List */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <TagIcon className="w-3 h-3 text-indigo-500" />
+                      Class Tags ({stu.tags.length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditingStudentTags(stu)}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Manage Tags
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    {stu.tags.map((tag) => (
+                      <div
+                        key={tag}
+                        className="flex items-center justify-between px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-700 dark:text-slate-300"
+                      >
+                        <span className="truncate max-w-[280px] sm:max-w-[340px]">{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyTag(tag)}
+                          className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 ml-2 shrink-0"
+                          title="Copy tag"
+                        >
+                          {copiedTag === tag ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bottom Action Footer */}
+                <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 text-xs">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {stats.total} sessions logged · {stats.late} late · {stats.absent} absences
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStudentForHistory(stu)}
+                    className="flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    <History className="w-3.5 h-3.5" /> Full Attendance Log
+                  </button>
+                </div>
+
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Student Attendance History Drawer / Modal */}
+      {selectedStudentForHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Attendance History: {selectedStudentForHistory.name}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Year {selectedStudentForHistory.yearGroup} · Parent: {selectedStudentForHistory.parentName} ({selectedStudentForHistory.parentPhone})
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedStudentForHistory(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-3 flex-1">
+              {sessions.filter(s => s.attendance?.some(a => a.studentId === selectedStudentForHistory.id)).length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-8">
+                  No attendance entries recorded yet for this student.
+                </p>
+              ) : (
+                sessions
+                  .filter(s => s.attendance?.some(a => a.studentId === selectedStudentForHistory.id))
+                  .sort((a, b) => b.date.localeCompare(a.date))
+                  .map((sess) => {
+                    const entry = sess.attendance.find(a => a.studentId === selectedStudentForHistory.id);
+                    if (!entry) return null;
+                    return (
+                      <div
+                        key={sess.id}
+                        className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900 dark:text-white">
+                              {sess.className}
+                            </span>
+                            <span className="text-slate-400">·</span>
+                            <span className="text-slate-500 dark:text-slate-400 font-mono">
+                              {sess.date} ({sess.dayOfWeek})
+                            </span>
+                          </div>
+                          {entry.notes && (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic mt-0.5">
+                              "{entry.notes}"
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <span className={`px-2.5 py-1 rounded font-semibold text-xs ${
+                            entry.status === 'present' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' :
+                            entry.status === 'late' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' :
+                            entry.status === 'absent' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' :
+                            'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                          }`}>
+                            {entry.status.toUpperCase()}{entry.minutesLate ? ` (${entry.minutesLate}m)` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => setSelectedStudentForHistory(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Student Tags Modal */}
+      {editingStudentTags && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Manage Tags: {editingStudentTags.name}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Select which of the 27 official class tags apply to this student
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingStudentTags(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-2 flex-1">
+              {TUTORING_CLASSES.map(cls => {
+                const isSelected = editingStudentTags.tags.some(t => normalizeTag(t) === normalizeTag(cls.tag));
+                return (
+                  <button
+                    key={cls.id}
+                    type="button"
+                    onClick={() => handleToggleTag(cls.tag)}
+                    className={`w-full p-2.5 rounded-lg border text-left text-xs transition-colors flex items-center justify-between gap-3 ${
+                      isSelected
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-slate-900 dark:text-white'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <p className="font-semibold">{cls.name}</p>
+                      <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{cls.tag}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${
+                      isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700'
+                    }`}>
+                      {isSelected && <Check className="w-3.5 h-3.5" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => setEditingStudentTags(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};

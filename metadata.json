@@ -1,0 +1,6 @@
+{
+  "name": "TutorTrack '26-'27 - Attendance & Schedule Dashboard",
+  "description": "Tutor dashboard for tracking student attendance and upcoming lesson schedules across Year 10, Year 11, and GCSE Exam Prep classes by tag.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
