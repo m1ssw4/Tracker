@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LessonSession, StudentAttendanceEntry, AttendanceStatus, Student, ApiConfig } from '../types';
 import { getStudentsByTag } from '../data/mockStudents';
-import { X, Check, Clock, AlertCircle, CheckCircle2, Copy, MessageSquare, Mail } from 'lucide-react';
+import { X, Check, Clock, AlertCircle, CheckCircle2, Copy, MessageSquare, Mail, ExternalLink } from 'lucide-react';
 import { SendMessageModal, MessageRecipient } from './SendMessageModal';
 
 interface AttendanceLoggerModalProps {
@@ -214,6 +214,16 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
                             Year {studentDetail.yearGroup}
                           </span>
                         )}
+                        <a
+                          href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${entry.studentId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs flex items-center gap-0.5 transition-colors"
+                          title="Open contact in GoHighLevel"
+                        >
+                          <span className="text-[11px] font-mono">GHL</span>
+                          <ExternalLink className="w-3 h-3 text-indigo-500" />
+                        </a>
                       </div>
                       {studentDetail && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">

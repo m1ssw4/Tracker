@@ -8,11 +8,14 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+const DEFAULT_CRM_API_KEY = 'pit-us-522a3e6c-fe1e-48e6-90f3-e904a5de38e5';
+const getApiKey = () => process.env.CRM_API_KEY || DEFAULT_CRM_API_KEY;
+
 let inMemoryLocationId = process.env.GHL_LOCATION_ID || 'sIsXZz9eCc7dSBiVNzZj';
 
 // Server-side check for CRM credentials (never exposing the raw secret key to client)
 app.get('/api/crm/status', (_req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY || '';
+  const apiKey = getApiKey();
   const isConfigured = Boolean(apiKey && apiKey.trim().length > 0);
   const locationId = inMemoryLocationId || process.env.GHL_LOCATION_ID || 'sIsXZz9eCc7dSBiVNzZj';
   
@@ -84,7 +87,7 @@ let liveStudentsCache: { timestamp: number; data: any[] } | null = null;
 
 // Fetch Real Contacts from GoHighLevel CRM (Real-time live sync)
 app.get('/api/contacts', async (req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY;
+  const apiKey = getApiKey();
   if (!apiKey) {
     return res.status(500).json({
       success: false,
@@ -307,7 +310,7 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
 
 // Secure server-side proxy for attendance sync & note logging to GoHighLevel
 app.post('/api/attendance/sync', async (req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY;
+  const apiKey = getApiKey();
   if (!apiKey) {
     return res.status(500).json({ 
       success: false, 
@@ -411,7 +414,7 @@ app.post('/api/attendance/sync', async (req: Request, res: Response) => {
 
 // Add direct note to a specific GoHighLevel contact
 app.post('/api/contacts/:contactId/notes', async (req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY;
+  const apiKey = getApiKey();
   if (!apiKey) {
     return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
   }
@@ -448,7 +451,7 @@ app.post('/api/contacts/:contactId/notes', async (req: Request, res: Response) =
 
 // Retrieve notes from a specific GoHighLevel contact
 app.get('/api/contacts/:contactId/notes', async (req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY;
+  const apiKey = getApiKey();
   if (!apiKey) {
     return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
   }
@@ -477,7 +480,7 @@ app.get('/api/contacts/:contactId/notes', async (req: Request, res: Response) =>
 });
 // Send real SMS or Email to a student / parent via GoHighLevel Conversations API
 app.post('/api/crm/send-message', async (req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY;
+  const apiKey = getApiKey();
   if (!apiKey) {
     return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
   }
@@ -547,7 +550,7 @@ app.post('/api/crm/send-message', async (req: Request, res: Response) => {
 
 // Send batch SMS or Email (e.g. class broadcasts, lesson reminders, absence notifications)
 app.post('/api/crm/send-batch-messages', async (req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY;
+  const apiKey = getApiKey();
   if (!apiKey) {
     return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
   }
@@ -614,7 +617,7 @@ app.post('/api/crm/send-batch-messages', async (req: Request, res: Response) => 
 });
 // Server-side test connection ping
 app.post('/api/crm/test-ping', async (req: Request, res: Response) => {
-  const apiKey = process.env.CRM_API_KEY;
+  const apiKey = getApiKey();
   if (!apiKey) {
     return res.json({
       success: false,

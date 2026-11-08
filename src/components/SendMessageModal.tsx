@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Mail, Send, X, CheckCircle2, AlertCircle, Sparkles, Loader2, Phone, User } from 'lucide-react';
+import { MessageSquare, Mail, Send, X, CheckCircle2, AlertCircle, Sparkles, Loader2, Phone, User, ExternalLink } from 'lucide-react';
 
 export interface MessageRecipient {
   contactId: string;
@@ -237,6 +237,16 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
                 <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300">
                   Parent: {recipient.parentName || 'N/A'}
                 </span>
+                <a
+                  href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${recipient.contactId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5 ml-1"
+                  title="Open this contact in GoHighLevel"
+                >
+                  <span>Open in GHL</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-3">
                 <span className={`flex items-center gap-1 font-mono ${messageType === 'SMS' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : ''}`}>

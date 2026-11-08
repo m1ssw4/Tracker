@@ -17,7 +17,8 @@ import {
   FileText,
   Send,
   Loader2,
-  MessageSquare
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react';
 import { SendMessageModal, MessageRecipient } from './SendMessageModal';
 
@@ -358,6 +359,15 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                     {stats.total} sessions logged · {stats.late} late · {stats.absent} absences
                   </span>
                   <div className="flex items-center gap-3">
+                    <a
+                      href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${stu.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 font-semibold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
+                      title="Open contact profile in GoHighLevel CRM"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-indigo-500" /> GHL Contact
+                    </a>
                     <button
                       type="button"
                       onClick={() => setMessageTarget({
@@ -399,9 +409,16 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">
                     {selectedStudentForHistory.name}
                   </h3>
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
-                    GHL: {selectedStudentForHistory.id}
-                  </span>
+                  <a
+                    href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${selectedStudentForHistory.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors flex items-center gap-1"
+                    title="Open contact in GoHighLevel CRM"
+                  >
+                    <span>GHL: {selectedStudentForHistory.id}</span>
+                    <ExternalLink className="w-3 h-3 text-indigo-500" />
+                  </a>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Year {selectedStudentForHistory.yearGroup} · Parent: {selectedStudentForHistory.parentName} ({selectedStudentForHistory.parentPhone})
@@ -409,6 +426,16 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                <a
+                  href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${selectedStudentForHistory.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                  title="Open this contact record in GoHighLevel"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Go to GHL Contact</span>
+                </a>
                 <button
                   type="button"
                   onClick={() => setMessageTarget({

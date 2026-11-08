@@ -1321,6 +1321,31 @@
     "notes": "GoHighLevel Contact (6zEdlo8ZF3UJwloxVsL7)"
   },
   {
+    "id": "66lNGQ01pIq8sdE0J6rD",
+    "name": "test blad",
+    "email": "test.blad@smarta.co.uk",
+    "parentName": "test",
+    "parentPhone": "+447492885818",
+    "parentEmail": "",
+    "yearGroup": 11,
+    "tags": [
+      "smarta lead",
+      "december",
+      "prospect replied",
+      "outbound called",
+      "booked call",
+      "confirmed appt",
+      "booked call `26-`27",
+      "appt-upcoming",
+      "'26-'27 year 11 foundation maths (2)(tue 6pm)"
+    ],
+    "targetGrades": {
+      "GCSE": "Target 8-9"
+    },
+    "avatarColor": "bg-indigo-600",
+    "notes": "GoHighLevel Contact (66lNGQ01pIq8sdE0J6rD)"
+  },
+  {
     "id": "FnB2Cjsv5kdI1ANT6iw5",
     "name": "Shay",
     "email": "patelt185@gmail.com",
@@ -1351,7 +1376,7 @@
     "targetGrades": {
       "GCSE": "Target 7-8"
     },
-    "avatarColor": "bg-indigo-600",
+    "avatarColor": "bg-blue-600",
     "notes": "GoHighLevel Contact (FnB2Cjsv5kdI1ANT6iw5)"
   }
 ]
