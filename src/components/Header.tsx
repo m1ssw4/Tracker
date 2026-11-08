@@ -1,5 +1,5 @@
 import React from 'react';
-import { Key, Moon, Sun, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Key, Moon, Sun, ShieldCheck, ShieldAlert, RefreshCw } from 'lucide-react';
 import { ApiConfig } from '../types';
 
 export type ActiveTab = 'schedules' | 'attendance' | 'classes' | 'students' | 'reports';
@@ -11,6 +11,8 @@ interface HeaderProps {
   onOpenApiModal: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  onSyncCrm?: () => void;
+  isSyncingCrm?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +21,9 @@ export const Header: React.FC<HeaderProps> = ({
   apiConfig,
   onOpenApiModal,
   isDark,
-  onToggleTheme
+  onToggleTheme,
+  onSyncCrm,
+  isSyncingCrm = false
 }) => {
   const isApiConnected = apiConfig.status === 'connected' || apiConfig.apiKey.trim().length > 0;
 
@@ -72,7 +76,19 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
 
         {/* Zone 3: Primary Action + Theme Toggle */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          {onSyncCrm && (
+            <button
+              onClick={onSyncCrm}
+              disabled={isSyncingCrm}
+              title="Real-time live sync with GoHighLevel CRM"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all whitespace-nowrap disabled:opacity-60"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 ${isSyncingCrm ? 'animate-spin' : ''}`} />
+              <span>{isSyncingCrm ? 'Syncing...' : 'Sync CRM'}</span>
+            </button>
+          )}
+
           <button
             onClick={onToggleTheme}
             aria-label="Toggle theme"

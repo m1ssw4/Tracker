@@ -79,7 +79,10 @@ function getCachedGhlStudents() {
   return null;
 }
 
-// Fetch Real Contacts from GoHighLevel CRM
+// In-memory short cache for real-time CRM student queries (10-second TTL)
+let liveStudentsCache: { timestamp: number; data: any[] } | null = null;
+
+// Fetch Real Contacts from GoHighLevel CRM (Real-time live sync)
 app.get('/api/contacts', async (req: Request, res: Response) => {
   const apiKey = process.env.CRM_API_KEY;
   if (!apiKey) {
@@ -90,54 +93,20 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
   }
 
   const locationId = (req.query.locationId as string) || inMemoryLocationId || process.env.GHL_LOCATION_ID || 'sIsXZz9eCc7dSBiVNzZj';
+  const forceRefresh = req.query.force === 'true' || req.query.refresh === 'true';
 
-  // Fast path: if cached file exists and no force refresh requested
-  const forceLive = req.query.force === 'true';
-  const cached = getCachedGhlStudents();
-  if (cached && cached.length > 0 && !forceLive) {
+  // Use short in-memory cache if not forced and less than 10 seconds old
+  if (!forceRefresh && liveStudentsCache && (Date.now() - liveStudentsCache.timestamp < 10000)) {
     return res.json({
       success: true,
-      count: cached.length,
+      count: liveStudentsCache.data.length,
       locationId: locationId.trim(),
-      students: cached,
-      source: 'GoHighLevel Live Cache'
+      students: liveStudentsCache.data,
+      source: 'GoHighLevel Real-Time Cache'
     });
   }
 
   try {
-    const ghlUrl = `https://services.leadconnectorhq.com/contacts/?locationId=${encodeURIComponent(locationId.trim())}&limit=100`;
-    
-    const response = await fetch(ghlUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${apiKey.trim()}`,
-        'Version': '2021-07-28'
-      }
-    });
-
-    if (!response.ok) {
-      // If live call encounters rate limits, return cached
-      if (cached && cached.length > 0) {
-        return res.json({
-          success: true,
-          count: cached.length,
-          locationId: locationId.trim(),
-          students: cached,
-          source: 'GoHighLevel Local Cache'
-        });
-      }
-
-      const errText = await response.text();
-      return res.status(response.status).json({
-        success: false,
-        error: `GoHighLevel API returned ${response.status}: ${errText}`
-      });
-    }
-
-    const data: any = await response.json();
-    const ghlContacts = data.contacts || [];
-
     const TARGET_CLASS_TAGS = [
       'year 11 higher chemistry (mon 7pm)',
       'year 11 higher biology (wed 7pm)',
@@ -168,32 +137,66 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
       'foundation maths + exam prep sessions'
     ];
 
-    const enrolledGhlContacts = ghlContacts.filter((c: any) => {
-      const cTags = (c.tags || []).map((t: string) => t.toLowerCase().replace(/[`‘’]/g, "'"));
-      return TARGET_CLASS_TAGS.some(target => cTags.some((ct: string) => ct.includes(target)));
+    // Queries to discover all group classes, subjects, cohorts & enrolled students in GHL
+    const SEARCH_QUERIES = [
+      'group student',
+      'literature',
+      'chemistry',
+      'biology',
+      'physics',
+      'maths',
+      'science',
+      'english',
+      'exam prep',
+      'year 10',
+      'year 11',
+      'foundation',
+      'higher'
+    ];
+
+    const fetchGhlQuery = async (queryTerm: string) => {
+      try {
+        const url = `https://services.leadconnectorhq.com/contacts/?locationId=${encodeURIComponent(locationId.trim())}&query=${encodeURIComponent(queryTerm)}&limit=100`;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${apiKey.trim()}`,
+            'Version': '2021-07-28'
+          }
+        });
+        if (!res.ok) return [];
+        const json: any = await res.json();
+        return Array.isArray(json.contacts) ? json.contacts : [];
+      } catch (e) {
+        return [];
+      }
+    };
+
+    // Parallel fetch across all targeted subject queries in GHL
+    const queryResults = await Promise.all(SEARCH_QUERIES.map(q => fetchGhlQuery(q)));
+    const allContactsMap = new Map<string, any>();
+    queryResults.flat().forEach(c => {
+      if (c && c.id) {
+        allContactsMap.set(c.id, c);
+      }
     });
 
-    // If single-page live fetch did not reach all enrolled contacts across the CRM, return the complete verified cache
-    if (enrolledGhlContacts.length < (cached?.length || 0) && cached && cached.length > 0) {
-      return res.json({
-        success: true,
-        count: cached.length,
-        locationId: locationId.trim(),
-        students: cached,
-        source: 'GoHighLevel Verified Roster'
-      });
-    }
+    const normalizeTagStr = (t: string) => t.toLowerCase().replace(/[`‘’]/g, "'").trim();
 
-    const contactsToMap = enrolledGhlContacts.length > 0 ? enrolledGhlContacts : ghlContacts;
+    // Filter contacts with active class enrollments
+    const enrolledContacts = Array.from(allContactsMap.values()).filter((c: any) => {
+      const cTags = (c.tags || []).map((t: string) => normalizeTagStr(t));
+      return TARGET_CLASS_TAGS.some(target => cTags.some((ct: string) => ct.includes(target)));
+    });
 
     const avatarColors = [
       'bg-indigo-600', 'bg-blue-600', 'bg-emerald-600', 'bg-rose-600', 
       'bg-amber-600', 'bg-purple-600', 'bg-teal-600', 'bg-cyan-600'
     ];
 
-    const mappedStudents = contactsToMap.map((c: any, index: number) => {
-      // The student name is strictly stored in "Student First & Last Name" (ID: w8IiqpaheyGSIUnG0S61 or key: contact.student_first__last_name)
-      // Fallbacks: t4o6XYzWSW2vqxJdtBzi ("Child's Full Name" / contact.childs_full_name) and uAEjr7NT6blcALwFUbkK ("Child's Name" / contact.childs_name)
+    const mappedStudents = enrolledContacts.map((c: any, index: number) => {
+      // Primary: "Student First & Last Name" (ID: w8IiqpaheyGSIUnG0S61)
       const studentField = (c.customFields || []).find((f: any) => 
         f.id === 'w8IiqpaheyGSIUnG0S61' || 
         f.fieldKey === 'contact.student_first__last_name' || 
@@ -213,20 +216,25 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
       const parentName = c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Parent';
       
       let candidateName = studentField?.value?.trim() || childFullNameField?.value?.trim() || childNameField?.value?.trim();
-      // Safeguard: Never allow internal team/setter names (e.g. Rebecca Collins, Charlie Fortt) to be assigned as student name
+      
+      // If student field isn't explicitly filled, check if contact name is suitable
+      if (!candidateName) {
+        candidateName = c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ');
+      }
+
+      // Safeguard: Never allow internal team/setter names to be assigned as student name
       if (!candidateName || /rebecca\s+collins/i.test(candidateName) || /charlie\s+fortt/i.test(candidateName)) {
         candidateName = `${parentName} (Student)`;
       }
-      const studentName = candidateName;
+
       const tags = Array.isArray(c.tags) ? c.tags : [];
-      
       const hasYear11 = tags.some((t: string) => t.toLowerCase().includes('year 11') || t.toLowerCase().includes('y11'));
       const yearGroup = hasYear11 ? 11 : 10;
 
       return {
         id: c.id,
-        name: studentName,
-        email: c.email || `${studentName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@smarta.co.uk`,
+        name: candidateName,
+        email: c.email || `${candidateName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@smarta.co.uk`,
         parentName: parentName,
         parentPhone: c.phone || '+44 7700 900000',
         parentEmail: c.email || '',
@@ -234,19 +242,43 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
         tags: tags,
         targetGrades: { 'GCSE': hasYear11 ? 'Target 8-9' : 'Target 7-8' },
         avatarColor: avatarColors[index % avatarColors.length],
-        notes: `Imported from GoHighLevel CRM (ID: ${c.id})`
+        notes: `GoHighLevel Contact (${c.id})`
       };
     });
 
+    if (mappedStudents.length > 0) {
+      liveStudentsCache = { timestamp: Date.now(), data: mappedStudents };
+
+      // Update disk cache file as well for cold restarts
+      try {
+        const jsonPath = path.resolve(process.cwd(), 'src/data/ghlStudents.json');
+        fs.writeFileSync(jsonPath, JSON.stringify(mappedStudents, null, 2));
+      } catch (writeErr) {
+        console.warn('Could not persist live students to ghlStudents.json', writeErr);
+      }
+
+      return res.json({
+        success: true,
+        count: mappedStudents.length,
+        locationId: locationId.trim(),
+        students: mappedStudents,
+        source: 'GoHighLevel Real-Time Live Sync',
+        fetchedAt: new Date().toISOString()
+      });
+    }
+
+    // Fallback if network issue
+    const cached = getCachedGhlStudents();
     return res.json({
       success: true,
-      count: mappedStudents.length,
+      count: cached?.length || 0,
       locationId: locationId.trim(),
-      students: mappedStudents,
-      source: 'GoHighLevel Live'
+      students: cached || [],
+      source: 'GoHighLevel Fallback Cache'
     });
 
   } catch (error: any) {
+    const cached = getCachedGhlStudents();
     if (cached && cached.length > 0) {
       return res.json({
         success: true,

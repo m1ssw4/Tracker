@@ -13,6 +13,7 @@ import {
   loadApiConfig, 
   saveApiConfig 
 } from './data/attendanceStore';
+import { normalizeTag } from './data/classesData';
 import { Header, ActiveTab } from './components/Header';
 import { ScheduleView } from './components/ScheduleView';
 import { AttendanceView } from './components/AttendanceView';
@@ -28,6 +29,7 @@ export default function App() {
   const [sessions, setSessions] = useState<LessonSession[]>(() => loadSavedSessions());
   const [students, setStudents] = useState<Student[]>(() => loadSavedStudents());
   const [apiConfig, setApiConfig] = useState<ApiConfig>(() => loadApiConfig());
+  const [isSyncingCrm, setIsSyncingCrm] = useState<boolean>(false);
   
   // Theme state
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -60,13 +62,23 @@ export default function App() {
 
   const [hasLocationId, setHasLocationId] = useState(true);
 
-  // Sync server-side CRM status and load real GHL students on mount
-  useEffect(() => {
-    // Proactively purge any stale client cache containing old setter values
-    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4'].forEach(k => {
-      try { localStorage.removeItem(k); } catch (_) {}
-    });
+  const fetchLiveCrmData = async (silent = false) => {
+    try {
+      if (!silent) setIsSyncingCrm(true);
+      const res = await fetch('/api/contacts?refresh=true');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.students) && data.students.length > 0) {
+        handleImportCrmStudents(data.students, silent);
+      }
+    } catch (err) {
+      console.warn('Real-time GHL contacts sync error', err);
+    } finally {
+      if (!silent) setIsSyncingCrm(false);
+    }
+  };
 
+  // Sync server-side CRM status and load real GHL students on mount + 25-sec polling
+  useEffect(() => {
     fetch('/api/crm/status')
       .then(res => res.json())
       .then(data => {
@@ -82,17 +94,15 @@ export default function App() {
       })
       .catch(() => {});
 
-    // Automatically pull real contacts from GoHighLevel
-    fetch('/api/contacts?force=true')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.students) && data.students.length > 0) {
-          handleImportCrmStudents(data.students);
-        }
-      })
-      .catch((err) => {
-        console.warn('Initial GHL contacts sync fallback', err);
-      });
+    // Immediate initial sync
+    fetchLiveCrmData(false);
+
+    // Auto-refresh in background every 25 seconds for real-time CRM updates
+    const interval = setInterval(() => {
+      fetchLiveCrmData(true);
+    }, 25000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const showToast = (msg: string) => {
@@ -155,46 +165,51 @@ export default function App() {
     showToast(`Attendance register successfully saved & synced for ${className}`);
   };
 
-  const handleImportCrmStudents = (crmStudents: Student[]) => {
+  const handleImportCrmStudents = (crmStudents: Student[], isSilent = false) => {
     setStudents(crmStudents);
     saveStudents(crmStudents);
     setHasLocationId(true);
 
     // Update sessions to enroll the real students with matching tags
-    const updatedSessions = sessions.map(sess => {
-      // Find students that have this session's tag
-      const matched = crmStudents.filter(stu => 
-        stu.tags.some(t => {
-          const cleanT = t.trim().toLowerCase().replace(/[‘’]/g, "'");
-          const cleanSessTag = sess.classTag.trim().toLowerCase().replace(/[‘’]/g, "'");
-          return cleanT === cleanSessTag || cleanT.includes(cleanSessTag) || cleanSessTag.includes(cleanT);
-        })
-      );
+    setSessions(prevSessions => {
+      const updatedSessions = prevSessions.map(sess => {
+        // Find students that have this session's tag (normalized matching)
+        const normSessTag = normalizeTag(sess.classTag);
+        const matched = crmStudents.filter(stu => 
+          stu.tags.some(t => {
+            const normT = normalizeTag(t);
+            return normT === normSessTag || normT.includes(normSessTag) || normSessTag.includes(normT);
+          })
+        );
 
-      const newAttendance: StudentAttendanceEntry[] = matched.map(stu => {
-        const existing = sess.attendance?.find(a => a.studentId === stu.id);
-        if (existing) {
+        const newAttendance: StudentAttendanceEntry[] = matched.map(stu => {
+          const existing = sess.attendance?.find(a => a.studentId === stu.id);
+          if (existing) {
+            return {
+              ...existing,
+              studentName: stu.name // Always use the true Student First & Last Name
+            };
+          }
           return {
-            ...existing,
-            studentName: stu.name // Always use the true Student First & Last Name
+            studentId: stu.id,
+            studentName: stu.name,
+            status: 'present'
           };
-        }
+        });
+
         return {
-          studentId: stu.id,
-          studentName: stu.name,
-          status: 'present'
+          ...sess,
+          attendance: newAttendance
         };
       });
 
-      return {
-        ...sess,
-        attendance: newAttendance
-      };
+      saveSessions(updatedSessions);
+      return updatedSessions;
     });
 
-    setSessions(updatedSessions);
-    saveSessions(updatedSessions);
-    showToast(`Loaded ${crmStudents.length} real students from GoHighLevel CRM!`);
+    if (!isSilent) {
+      showToast(`Synchronized ${crmStudents.length} real students from GoHighLevel CRM!`);
+    }
   };
 
   const handleUpdateStudents = async (updated: Student[], updatedStudentId?: string, actionNote?: string) => {
@@ -239,6 +254,8 @@ export default function App() {
         onOpenApiModal={() => setIsApiModalOpen(true)}
         isDark={isDark}
         onToggleTheme={() => setIsDark(!isDark)}
+        onSyncCrm={() => fetchLiveCrmData(false)}
+        isSyncingCrm={isSyncingCrm}
       />
 
       {/* Location ID sync prompt banner if not yet provided */}
