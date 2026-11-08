@@ -2,9 +2,9 @@ import { LessonSession, StudentAttendanceEntry, ApiConfig, Student } from '../ty
 import { TUTORING_CLASSES } from './classesData';
 import { INITIAL_STUDENTS, getStudentsByTag } from './mockStudents';
 
-const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v5';
+const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v7';
 const STORAGE_KEY_API_CONFIG = 'tutortrack_api_config_2627_v1';
-const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v5';
+const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v7';
 
 // Map day of week to date offset relative to Monday 2026-11-02 (Past week) and Monday 2026-11-09 (Current/Upcoming week)
 const DAY_OFFSETS: Record<string, number> = {
@@ -132,7 +132,7 @@ export function generateInitialSessions(): LessonSession[] {
 // Local Storage Helpers
 export function loadSavedSessions(): LessonSession[] {
   try {
-    ['tutortrack_sessions_2627_ghl_v1', 'tutortrack_sessions_2627_ghl_v2', 'tutortrack_sessions_2627_ghl_v3', 'tutortrack_sessions_2627_ghl_v4'].forEach(k => {
+    ['tutortrack_sessions_2627_ghl_v1', 'tutortrack_sessions_2627_ghl_v2', 'tutortrack_sessions_2627_ghl_v3', 'tutortrack_sessions_2627_ghl_v4', 'tutortrack_sessions_2627_ghl_v5', 'tutortrack_sessions_2627_ghl_v6'].forEach(k => {
       try { localStorage.removeItem(k); } catch (_) {}
     });
 
@@ -144,7 +144,17 @@ export function loadSavedSessions(): LessonSession[] {
         sess.attendance?.some(a => /rebecca\s+collins/i.test(a.studentName))
       );
       if (!hasStaleSetter && parsed.length > 0) {
-        return parsed;
+        // Synchronize tutor with authentic instructors from TUTORING_CLASSES
+        return parsed.map(sess => {
+          const classDef = TUTORING_CLASSES.find(c => 
+            c.id === sess.classId || 
+            c.tag.trim().toLowerCase() === sess.classTag.trim().toLowerCase()
+          );
+          if (classDef && classDef.assignedTutor) {
+            return { ...sess, tutor: classDef.assignedTutor };
+          }
+          return sess;
+        });
       }
     }
   } catch (e) {
@@ -165,7 +175,7 @@ export function saveSessions(sessions: LessonSession[]): void {
 
 export function loadSavedStudents(): Student[] {
   try {
-    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4'].forEach(k => {
+    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4', 'tutortrack_students_2627_ghl_v5', 'tutortrack_students_2627_ghl_v6'].forEach(k => {
       try { localStorage.removeItem(k); } catch (_) {}
     });
 

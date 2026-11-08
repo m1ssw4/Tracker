@@ -14,7 +14,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Mon 7:00 PM – 8:00 PM',
     cohort: 'Main',
-    assignedTutor: 'Dr. Sarah Lin',
+    assignedTutor: 'Richard "Rich" Handley',
     roomOrLink: 'https://meet.google.com/chem-y11-mon',
     capacity: 12,
     description: 'GCSE Higher tier Chemistry: Organic chemistry, quantitative calculations, electrolysis and rate of reaction.'
@@ -31,7 +31,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Wed 7:00 PM – 8:00 PM',
     cohort: 'Main',
-    assignedTutor: 'Dr. Sarah Lin',
+    assignedTutor: 'Jake Sewell',
     roomOrLink: 'https://meet.google.com/bio-y11-wed',
     capacity: 12,
     description: 'GCSE Higher tier Biology: Genetics, homeostasis, inheritance, ecology and monoclonal antibodies.'
@@ -48,7 +48,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Tue 7:00 PM – 8:00 PM',
     cohort: 'Main',
-    assignedTutor: 'Prof. David Thorne',
+    assignedTutor: 'Richard "Rich" Handley',
     roomOrLink: 'https://meet.google.com/phys-y11-tue',
     capacity: 12,
     description: 'GCSE Higher Physics: Electromagnetism, nuclear physics, particle models, wave calculations and vectors.'
@@ -65,7 +65,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Tue 7:00 PM – 8:00 PM',
     cohort: '(2)',
-    assignedTutor: 'Dr. Michael Chen',
+    assignedTutor: 'Jake Sewell',
     roomOrLink: 'https://meet.google.com/sci-y11-h2',
     capacity: 14,
     description: 'Combined Science Trilogy (Higher Tier) Cohort 2: Comprehensive physics and chemistry modules.'
@@ -82,7 +82,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Mon 6:00 PM – 7:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Dr. Michael Chen',
+    assignedTutor: 'Jake Sewell',
     roomOrLink: 'https://meet.google.com/sci-y11-h1',
     capacity: 14,
     description: 'Combined Science Trilogy (Higher Tier) Cohort 1: Core biology and chemistry exam skills.'
@@ -99,7 +99,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Thu 6:00 PM – 7:00 PM',
     cohort: '(2)',
-    assignedTutor: 'Emily Watson',
+    assignedTutor: 'Ellie Wright',
     roomOrLink: 'https://meet.google.com/sci-y11-f2',
     capacity: 10,
     description: 'Foundation Science targeted grade 4-5 booster: Required practicals and core knowledge.'
@@ -116,7 +116,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Tue 7:00 PM – 8:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Emily Watson',
+    assignedTutor: 'Ellie Wright',
     roomOrLink: 'https://meet.google.com/sci-y11-f1',
     capacity: 10,
     description: 'Foundation Science Cohort 1: Structured revision, energy stores, atomic structure and cells.'
@@ -133,7 +133,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Tue 6:00 PM – 7:00 PM',
     cohort: '(2)',
-    assignedTutor: 'James Robinson',
+    assignedTutor: 'Edwin Munoz',
     roomOrLink: 'https://meet.google.com/mat-y11-f2',
     capacity: 10,
     description: 'GCSE Foundation Maths Cohort 2: Fractions, ratio, linear equations, Pythagoras and probability.'
@@ -150,7 +150,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Thu 7:00 PM – 8:00 PM',
     cohort: '(1)',
-    assignedTutor: 'James Robinson',
+    assignedTutor: 'Edwin Munoz',
     roomOrLink: 'https://meet.google.com/mat-y11-f1',
     capacity: 10,
     description: 'GCSE Foundation Maths Cohort 1: Algebra manipulation, area, perimeter and data representations.'
@@ -167,7 +167,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Thu 6:00 PM – 7:00 PM',
     cohort: '(2)',
-    assignedTutor: 'Claire Gallagher',
+    assignedTutor: 'Edwin Munoz',
     roomOrLink: 'https://meet.google.com/mat-y11-h2',
     capacity: 12,
     description: 'GCSE Higher Maths Cohort 2: Circle theorems, quadratic inequalities, surds and function notation.'
@@ -184,7 +184,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Wed 6:00 PM – 7:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Claire Gallagher',
+    assignedTutor: 'Edwin Munoz',
     roomOrLink: 'https://meet.google.com/mat-y11-h1',
     capacity: 12,
     description: 'GCSE Higher Maths Cohort 1: Advanced vectors, geometric proof, non-linear graphs and 3D trigonometry.'
@@ -201,7 +201,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Tue 6:00 PM – 7:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Alistair Ross',
+    assignedTutor: 'Kelly Barraclough-Dunn',
     roomOrLink: 'https://meet.google.com/lit-y11-1',
     capacity: 12,
     description: 'GCSE Literature: Shakespeare (Macbeth / Romeo & Juliet), 19th-century prose and essay thesis writing.'
@@ -218,7 +218,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Wed 7:00 PM – 8:00 PM',
     cohort: '(2)',
-    assignedTutor: 'Alistair Ross',
+    assignedTutor: 'Kelly Barraclough-Dunn',
     roomOrLink: 'https://meet.google.com/lit-y11-2',
     capacity: 12,
     description: 'GCSE Literature Cohort 2: Modern drama (An Inspector Calls / Lord of the Flies) and Poetry Anthology.'
@@ -235,7 +235,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Thu 7:00 PM – 8:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Hannah Clarke',
+    assignedTutor: 'Kelly Barraclough-Dunn',
     roomOrLink: 'https://meet.google.com/eng-y11-1',
     capacity: 12,
     description: 'GCSE English Language Paper 1 & 2: Explorations in creative reading, evaluation questions and viewpoints.'
@@ -252,7 +252,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Wed 6:00 PM – 7:00 PM',
     cohort: '(2)',
-    assignedTutor: 'Hannah Clarke',
+    assignedTutor: 'Toni Mann',
     roomOrLink: 'https://meet.google.com/eng-y11-2',
     capacity: 12,
     description: 'GCSE English Language Cohort 2: Descriptive and narrative writing craft, linguistic analysis.'
@@ -269,7 +269,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Mon 6:00 PM – 7:00 PM',
     cohort: '(3)',
-    assignedTutor: 'Hannah Clarke',
+    assignedTutor: 'Gemma Louise Koksal',
     roomOrLink: 'https://meet.google.com/eng-y11-3',
     capacity: 12,
     description: 'GCSE English Language Cohort 3: Non-fiction analysis, speech and article writing mastery.'
@@ -288,7 +288,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Mon 7:00 PM – 8:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Hannah Clarke',
+    assignedTutor: 'Gemma Louise Koksal',
     roomOrLink: 'https://meet.google.com/eng-y10-1',
     capacity: 12,
     description: 'Year 10 English: Building critical reading foundations, quote integration and analytical paragraphing.'
@@ -305,7 +305,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Tue 7:00 PM – 8:00 PM',
     cohort: '(2)',
-    assignedTutor: 'Alistair Ross',
+    assignedTutor: 'Gemma Louise Koksal',
     roomOrLink: 'https://meet.google.com/eng-y10-2',
     capacity: 12,
     description: 'Year 10 English Cohort 2: Creative writing workshop, vocabulary expansion and sentence structures.'
@@ -322,7 +322,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Wed 6:00 PM – 7:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Dr. Sarah Lin',
+    assignedTutor: 'Jake Sewell',
     roomOrLink: 'https://meet.google.com/sci-y10-1',
     capacity: 14,
     description: 'Year 10 Science: Foundational Cell Biology, Atomic Structure and Energy Stores.'
@@ -339,7 +339,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Thu 7:00 PM – 8:00 PM',
     cohort: '(2)',
-    assignedTutor: 'Dr. Michael Chen',
+    assignedTutor: 'Jake Sewell',
     roomOrLink: 'https://meet.google.com/sci-y10-2',
     capacity: 14,
     description: 'Year 10 Science Cohort 2: Periodic Table trends, Chemical Bonds and Electric Circuits.'
@@ -356,7 +356,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '19:00',
     timeDisplay: 'Tue 6:00 PM – 7:00 PM',
     cohort: '(1)',
-    assignedTutor: 'Claire Gallagher',
+    assignedTutor: 'Richard "Rich" Handley',
     roomOrLink: 'https://meet.google.com/mat-y10-1',
     capacity: 12,
     description: 'Year 10 Maths: Linear graphs, simultaneous equations, angles in polygons and percentages.'
@@ -373,7 +373,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '20:00',
     timeDisplay: 'Wed 7:00 PM – 8:00 PM',
     cohort: '(2)',
-    assignedTutor: 'James Robinson',
+    assignedTutor: 'Richard "Rich" Handley',
     roomOrLink: 'https://meet.google.com/mat-y10-2',
     capacity: 12,
     description: 'Year 10 Maths Cohort 2: Expanding brackets, factorisation, probability trees and transformations.'
@@ -392,7 +392,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '11:30',
     timeDisplay: 'Sat 10:00 AM – 11:30 AM',
     cohort: 'Prep',
-    assignedTutor: 'Hannah Clarke & Alistair Ross',
+    assignedTutor: 'Kelly Barraclough-Dunn & Gemma Louise Koksal',
     roomOrLink: 'https://meet.google.com/prep-eng-live',
     capacity: 25,
     description: 'Intensive weekend exam walkthrough: Timed practice questions, mark scheme decoding and examiner feedback.'
@@ -409,7 +409,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '13:15',
     timeDisplay: 'Sat 11:45 AM – 1:15 PM',
     cohort: 'Prep',
-    assignedTutor: 'Dr. Sarah Lin & Dr. Michael Chen',
+    assignedTutor: 'Jake Sewell & Richard "Rich" Handley',
     roomOrLink: 'https://meet.google.com/prep-sci-h-live',
     capacity: 25,
     description: 'GCSE Higher Science 6-mark question masterclass, mathematical science formulas and past paper breakdowns.'
@@ -426,7 +426,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '15:00',
     timeDisplay: 'Sat 1:30 PM – 3:00 PM',
     cohort: 'Prep',
-    assignedTutor: 'Emily Watson',
+    assignedTutor: 'Ellie Wright',
     roomOrLink: 'https://meet.google.com/prep-sci-f-live',
     capacity: 20,
     description: 'Foundation Science grade 4-5 secure pass sessions: High-frequency exam questions and practical revision.'
@@ -443,7 +443,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '11:30',
     timeDisplay: 'Sun 10:00 AM – 11:30 AM',
     cohort: 'Prep',
-    assignedTutor: 'Claire Gallagher',
+    assignedTutor: 'Edwin Munoz',
     roomOrLink: 'https://meet.google.com/prep-mat-h-live',
     capacity: 25,
     description: 'Grade 7-9 Higher Maths exam series: Problem-solving proofs, vectors, algebraic manipulation under timed conditions.'
@@ -460,7 +460,7 @@ export const TUTORING_CLASSES: TutoringClass[] = [
     endTime: '13:15',
     timeDisplay: 'Sun 11:45 AM – 1:15 PM',
     cohort: 'Prep',
-    assignedTutor: 'James Robinson',
+    assignedTutor: 'Edwin Munoz & Richard "Rich" Handley',
     roomOrLink: 'https://meet.google.com/prep-mat-f-live',
     capacity: 20,
     description: 'Foundation Maths exam clinic: Calculator & non-calculator strategies, securing marks on questions 1-20.'
