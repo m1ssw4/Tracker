@@ -265,7 +265,7 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
   }
 });
 
-// Secure server-side proxy for attendance sync back to GoHighLevel
+// Secure server-side proxy for attendance sync & note logging to GoHighLevel
 app.post('/api/attendance/sync', async (req: Request, res: Response) => {
   const apiKey = process.env.CRM_API_KEY;
   if (!apiKey) {
@@ -275,26 +275,164 @@ app.post('/api/attendance/sync', async (req: Request, res: Response) => {
     });
   }
 
-  const { classTag, className, date, attendance } = req.body;
+  const { classTag, className, date, tutor, attendance } = req.body;
 
   try {
-    console.log(`[GoHighLevel Sync] Synchronized ${attendance?.length || 0} attendance records for tag "${classTag}" on ${date} using token ${apiKey.slice(0, 7)}...`);
+    const results: Array<{
+      studentId: string;
+      studentName: string;
+      status: 'note_created' | 'note_failed' | 'skipped';
+      noteId?: string;
+      error?: string;
+    }> = [];
+
+    if (Array.isArray(attendance) && attendance.length > 0) {
+      for (const entry of attendance) {
+        if (!entry.studentId) continue;
+
+        const statusUpper = (entry.status || 'present').toUpperCase();
+        const formattedDate = date || new Date().toISOString().split('T')[0];
+        
+        // Format structured note for GoHighLevel contact activity timeline
+        const noteLines = [
+          `📋 TutorTrack Attendance: ${statusUpper}${entry.status === 'late' && entry.minutesLate ? ` (${entry.minutesLate} mins late)` : ''}`,
+          `📚 Class: ${className || classTag}`,
+          `📅 Date: ${formattedDate}`,
+          tutor ? `👨‍🏫 Tutor: ${tutor}` : null,
+          entry.notes && entry.notes.trim() ? `📝 Tutor Note: ${entry.notes.trim()}` : null,
+          `🏷️ Tag: ${classTag || 'N/A'}`
+        ].filter(Boolean);
+
+        const noteBody = noteLines.join('\n');
+
+        try {
+          const noteUrl = `https://services.leadconnectorhq.com/contacts/${encodeURIComponent(entry.studentId)}/notes`;
+          const noteRes = await fetch(noteUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey.trim()}`,
+              'Version': '2021-07-28',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ body: noteBody })
+          });
+
+          if (noteRes.ok) {
+            const data: any = await noteRes.json();
+            results.push({
+              studentId: entry.studentId,
+              studentName: entry.studentName,
+              status: 'note_created',
+              noteId: data?.note?.id
+            });
+          } else {
+            const errText = await noteRes.text();
+            results.push({
+              studentId: entry.studentId,
+              studentName: entry.studentName,
+              status: 'note_failed',
+              error: `GHL ${noteRes.status}: ${errText.slice(0, 100)}`
+            });
+          }
+        } catch (fetchErr: any) {
+          results.push({
+            studentId: entry.studentId,
+            studentName: entry.studentName,
+            status: 'note_failed',
+            error: fetchErr?.message
+          });
+        }
+      }
+    }
+
+    const createdCount = results.filter(r => r.status === 'note_created').length;
+    console.log(`[GoHighLevel Sync] Created ${createdCount} notes in GHL for class "${className || classTag}"`);
 
     return res.json({
       success: true,
-      message: `Attendance register securely synchronized with GoHighLevel for ${className || classTag}`,
+      message: `Logged ${createdCount} attendance note(s) directly into GoHighLevel CRM contact timelines!`,
       recordsSynced: attendance?.length || 0,
+      notesCreated: createdCount,
+      details: results,
       timestamp: new Date().toISOString(),
       provider: 'GoHighLevel (pit-us)',
       status: 'synced',
       runtime: 'Vercel Serverless Function'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[GHL Sync Error]', error);
     return res.status(500).json({ 
       success: false, 
-      error: 'Failed to dispatch proxy sync to CRM' 
+      error: `Failed to dispatch proxy sync to CRM: ${error?.message}` 
     });
+  }
+});
+
+// Add direct note to a specific GoHighLevel contact
+app.post('/api/contacts/:contactId/notes', async (req: Request, res: Response) => {
+  const apiKey = process.env.CRM_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
+  }
+
+  const { contactId } = req.params;
+  const { body } = req.body;
+  if (!body || typeof body !== 'string') {
+    return res.status(400).json({ success: false, error: 'Note body string is required' });
+  }
+
+  try {
+    const noteRes = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/notes`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Version': '2021-07-28',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ body })
+    });
+
+    if (!noteRes.ok) {
+      const errText = await noteRes.text();
+      return res.status(noteRes.status).json({ success: false, error: errText });
+    }
+
+    const data: any = await noteRes.json();
+    return res.json({ success: true, note: data?.note });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message });
+  }
+});
+
+// Retrieve notes from a specific GoHighLevel contact
+app.get('/api/contacts/:contactId/notes', async (req: Request, res: Response) => {
+  const apiKey = process.env.CRM_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
+  }
+
+  const { contactId } = req.params;
+
+  try {
+    const getRes = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/notes`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Version': '2021-07-28',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!getRes.ok) {
+      const errText = await getRes.text();
+      return res.status(getRes.status).json({ success: false, error: errText });
+    }
+
+    const data: any = await getRes.json();
+    return res.json({ success: true, notes: data?.notes || [] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message });
   }
 });
 

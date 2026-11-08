@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Student, LessonSession } from '../types';
 import { TUTORING_CLASSES, normalizeTag } from '../data/classesData';
 import { 
@@ -13,12 +13,15 @@ import {
   Copy, 
   X,
   History,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Send,
+  Loader2
 } from 'lucide-react';
 
 interface StudentsViewProps {
   students: Student[];
-  onUpdateStudents: (updated: Student[]) => void;
+  onUpdateStudents: (updated: Student[], updatedStudentId?: string, actionNote?: string) => void;
   sessions: LessonSession[];
 }
 
@@ -33,6 +36,13 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<Student | null>(null);
   const [editingStudentTags, setEditingStudentTags] = useState<Student | null>(null);
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
+
+  // GoHighLevel Contact Notes drawer state
+  const [drawerTab, setDrawerTab] = useState<'attendance' | 'ghl_notes'>('attendance');
+  const [ghlNotes, setGhlNotes] = useState<any[]>([]);
+  const [isLoadingGhlNotes, setIsLoadingGhlNotes] = useState(false);
+  const [newNoteInput, setNewNoteInput] = useState('');
+  const [isAddingNote, setIsAddingNote] = useState(false);
 
   // All 27 tags for filter dropdown
   const allTags = useMemo(() => TUTORING_CLASSES.map(c => c.tag), []);
@@ -95,6 +105,55 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
     });
   }, [students, yearFilter, tagFilter, searchQuery]);
 
+  // Fetch live GoHighLevel notes
+  const fetchGhlNotes = async (contactId: string) => {
+    setIsLoadingGhlNotes(true);
+    try {
+      const res = await fetch(`/api/contacts/${encodeURIComponent(contactId)}/notes`);
+      if (res.ok) {
+        const data = await res.json();
+        setGhlNotes(data.notes || []);
+      }
+    } catch (e) {
+      console.warn('Failed to load GHL notes', e);
+    } finally {
+      setIsLoadingGhlNotes(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedStudentForHistory) {
+      fetchGhlNotes(selectedStudentForHistory.id);
+    } else {
+      setGhlNotes([]);
+      setNewNoteInput('');
+      setDrawerTab('attendance');
+    }
+  }, [selectedStudentForHistory]);
+
+  const handleAddManualNote = async () => {
+    if (!selectedStudentForHistory || !newNoteInput.trim()) return;
+    setIsAddingNote(true);
+    try {
+      const res = await fetch(`/api/contacts/${encodeURIComponent(selectedStudentForHistory.id)}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: newNoteInput.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.note) {
+          setGhlNotes(prev => [data.note, ...prev]);
+        }
+        setNewNoteInput('');
+      }
+    } catch (e) {
+      console.error('Failed to post manual note to GHL', e);
+    } finally {
+      setIsAddingNote(false);
+    }
+  };
+
   // Manage tags on student
   const handleToggleTag = (tagToAddOrRemove: string) => {
     if (!editingStudentTags) return;
@@ -109,7 +168,11 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
     const updated = { ...editingStudentTags, tags: nextTags };
     setEditingStudentTags(updated);
 
-    onUpdateStudents(students.map(s => s.id === updated.id ? updated : s));
+    onUpdateStudents(
+      students.map(s => s.id === updated.id ? updated : s),
+      updated.id,
+      exists ? `Removed class tag: "${tagToAddOrRemove}"` : `Added class tag: "${tagToAddOrRemove}"`
+    );
   };
 
   return (
@@ -304,16 +367,23 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         )}
       </div>
 
-      {/* Student Attendance History Drawer / Modal */}
+      {/* Student Attendance History & GoHighLevel Notes Drawer */}
       {selectedStudentForHistory && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+            
+            {/* Header */}
             <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Attendance History: {selectedStudentForHistory.name}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {selectedStudentForHistory.name}
+                  </h3>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                    GHL: {selectedStudentForHistory.id}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Year {selectedStudentForHistory.yearGroup} · Parent: {selectedStudentForHistory.parentName} ({selectedStudentForHistory.parentPhone})
                 </p>
               </div>
@@ -325,60 +395,172 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-3 flex-1">
-              {sessions.filter(s => s.attendance?.some(a => a.studentId === selectedStudentForHistory.id)).length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-8">
-                  No attendance entries recorded yet for this student.
-                </p>
-              ) : (
-                sessions
-                  .filter(s => s.attendance?.some(a => a.studentId === selectedStudentForHistory.id))
-                  .sort((a, b) => b.date.localeCompare(a.date))
-                  .map((sess) => {
-                    const entry = sess.attendance.find(a => a.studentId === selectedStudentForHistory.id);
-                    if (!entry) return null;
-                    return (
-                      <div
-                        key={sess.id}
-                        className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-slate-900 dark:text-white">
-                              {sess.className}
-                            </span>
-                            <span className="text-slate-400">·</span>
-                            <span className="text-slate-500 dark:text-slate-400 font-mono">
-                              {sess.date} ({sess.dayOfWeek})
-                            </span>
-                          </div>
-                          {entry.notes && (
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic mt-0.5">
-                              "{entry.notes}"
-                            </p>
-                          )}
-                        </div>
+            {/* Sub-tabs: Attendance History vs GoHighLevel CRM Notes */}
+            <div className="px-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-4 text-xs font-medium">
+              <button
+                onClick={() => setDrawerTab('attendance')}
+                className={`py-3 flex items-center gap-1.5 border-b-2 transition-colors ${
+                  drawerTab === 'attendance'
+                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                <History className="w-3.5 h-3.5" />
+                Attendance Sessions ({sessions.filter(s => s.attendance?.some(a => a.studentId === selectedStudentForHistory.id)).length})
+              </button>
 
-                        <div className="shrink-0 text-right">
-                          <span className={`px-2.5 py-1 rounded font-semibold text-xs ${
-                            entry.status === 'present' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' :
-                            entry.status === 'late' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' :
-                            entry.status === 'absent' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' :
-                            'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                          }`}>
-                            {entry.status.toUpperCase()}{entry.minutesLate ? ` (${entry.minutesLate}m)` : ''}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-              )}
+              <button
+                onClick={() => setDrawerTab('ghl_notes')}
+                className={`py-3 flex items-center gap-1.5 border-b-2 transition-colors ${
+                  drawerTab === 'ghl_notes'
+                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                GoHighLevel CRM Notes ({ghlNotes.length})
+                {isLoadingGhlNotes && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+              </button>
             </div>
 
+            {/* Tab 1: Attendance History */}
+            {drawerTab === 'attendance' && (
+              <div className="p-6 overflow-y-auto space-y-3 flex-1">
+                {sessions.filter(s => s.attendance?.some(a => a.studentId === selectedStudentForHistory.id)).length === 0 ? (
+                  <p className="text-xs text-slate-500 text-center py-8">
+                    No attendance entries recorded yet for this student.
+                  </p>
+                ) : (
+                  sessions
+                    .filter(s => s.attendance?.some(a => a.studentId === selectedStudentForHistory.id))
+                    .sort((a, b) => b.date.localeCompare(a.date))
+                    .map((sess) => {
+                      const entry = sess.attendance.find(a => a.studentId === selectedStudentForHistory.id);
+                      if (!entry) return null;
+                      return (
+                        <div
+                          key={sess.id}
+                          className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-slate-900 dark:text-white">
+                                {sess.className}
+                              </span>
+                              <span className="text-slate-400">·</span>
+                              <span className="text-slate-500 dark:text-slate-400 font-mono">
+                                {sess.date} ({sess.dayOfWeek})
+                              </span>
+                            </div>
+                            {entry.notes && (
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 italic mt-0.5">
+                                "{entry.notes}"
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="shrink-0 text-right">
+                            <span className={`px-2.5 py-1 rounded font-semibold text-xs ${
+                              entry.status === 'present' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' :
+                              entry.status === 'late' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' :
+                              entry.status === 'absent' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' :
+                              'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            }`}>
+                              {entry.status.toUpperCase()}{entry.minutesLate ? ` (${entry.minutesLate}m)` : ''}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: GoHighLevel CRM Notes */}
+            {drawerTab === 'ghl_notes' && (
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                {/* Note composer directly to GoHighLevel */}
+                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                    <span>Add Note to GoHighLevel Contact</span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-normal">
+                      ● Live CRM Sync Active
+                    </span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={newNoteInput}
+                    onChange={(e) => setNewNoteInput(e.target.value)}
+                    placeholder="Enter academic note, parent update, or student follow-up..."
+                    className="w-full p-2.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={isAddingNote || !newNoteInput.trim()}
+                      onClick={handleAddManualNote}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
+                    >
+                      {isAddingNote ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Posting to GHL...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3 h-3" />
+                          <span>Add Note to GHL</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Notes List */}
+                {isLoadingGhlNotes ? (
+                  <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                    <span>Loading notes from GoHighLevel CRM...</span>
+                  </div>
+                ) : ghlNotes.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400">
+                    No notes recorded in GoHighLevel for this contact yet. Use the composer above to post one!
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {ghlNotes.map((n: any, idx: number) => (
+                      <div
+                        key={n.id || idx}
+                        className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs space-y-1.5 shadow-xs"
+                      >
+                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                            {n.dateAdded ? new Date(n.dateAdded).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : 'Recent Note'}
+                          </span>
+                          <span className="font-mono text-[10px] text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">
+                            GHL Note
+                          </span>
+                        </div>
+                        <div 
+                          className="text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{ 
+                            __html: typeof n.body === 'string' && n.body.includes('<') 
+                              ? n.body 
+                              : (n.bodyText || n.body || '')
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Footer */}
             <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setSelectedStudentForHistory(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 Close
               </button>

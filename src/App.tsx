@@ -124,10 +124,10 @@ export default function App() {
     setSessions(updatedSessions);
     saveSessions(updatedSessions);
 
-    // Dispatch background sync to server-side proxy
+    // Dispatch real-time note sync to GoHighLevel CRM
     try {
       if (sessionObj) {
-        await fetch('/api/attendance/sync', {
+        const response = await fetch('/api/attendance/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -135,9 +135,18 @@ export default function App() {
             classTag: sessionObj.classTag,
             className: sessionObj.className,
             date: sessionObj.date,
+            tutor: sessionObj.tutor,
             attendance: entries
           })
         });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (typeof data.notesCreated === 'number' && data.notesCreated > 0) {
+            showToast(`Attendance saved & logged ${data.notesCreated} note(s) directly to GoHighLevel contact profiles!`);
+            return;
+          }
+        }
       }
     } catch (err) {
       console.warn('Proxy sync notification skipped', err);
@@ -188,9 +197,28 @@ export default function App() {
     showToast(`Loaded ${crmStudents.length} real students from GoHighLevel CRM!`);
   };
 
-  const handleUpdateStudents = (updated: Student[]) => {
+  const handleUpdateStudents = async (updated: Student[], updatedStudentId?: string, actionNote?: string) => {
     setStudents(updated);
     saveStudents(updated);
+
+    if (updatedStudentId) {
+      const student = updated.find(s => s.id === updatedStudentId);
+      if (student) {
+        try {
+          const noteBody = `🏷️ TutorTrack Profile Update\nStudent: ${student.name}\n${actionNote || 'Student enrollment / tags updated'}\nActive Class Tags: ${student.tags.join(', ')}\n(Updated via TutorTrack Portal)`;
+          await fetch(`/api/contacts/${encodeURIComponent(student.id)}/notes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ body: noteBody })
+          });
+          showToast(`Updated ${student.name} & logged update note to GoHighLevel CRM!`);
+          return;
+        } catch (e) {
+          console.warn('Could not post student note to GHL', e);
+        }
+      }
+    }
+
     showToast('Student roster and class tags updated');
   };
 
