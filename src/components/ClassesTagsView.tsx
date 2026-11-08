@@ -12,30 +12,48 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  Sparkles
+  Sparkles,
+  X,
+  Loader2
 } from 'lucide-react';
 
 interface ClassesTagsViewProps {
   allStudents: Student[];
   sessions: LessonSession[];
   onSelectClassForAttendance: (session: LessonSession) => void;
+  onRemoveTag?: (studentId: string, tag: string) => Promise<void> | void;
 }
 
 export const ClassesTagsView: React.FC<ClassesTagsViewProps> = ({
   allStudents,
   sessions,
-  onSelectClassForAttendance
+  onSelectClassForAttendance,
+  onRemoveTag
 }) => {
   const [searchTag, setSearchTag] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'Year 11' | 'Year 10' | 'Exam Prep'>('All');
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
+  const [removingStudentTag, setRemovingStudentTag] = useState<string | null>(null);
 
   const handleCopyTag = (tag: string) => {
     navigator.clipboard.writeText(tag);
     setCopiedTag(tag);
     setTimeout(() => setCopiedTag(null), 2000);
+  };
+
+  const handleRemoveStudentFromClass = async (stu: Student, classTag: string) => {
+    if (!onRemoveTag) return;
+    const key = `${stu.id}_${classTag}`;
+    setRemovingStudentTag(key);
+    try {
+      await onRemoveTag(stu.id, classTag);
+    } catch (err) {
+      console.error('Failed to unenroll student in GHL', err);
+    } finally {
+      setRemovingStudentTag(null);
+    }
   };
 
   // Filter classes
@@ -301,24 +319,44 @@ export const ClassesTagsView: React.FC<ClassesTagsViewProps> = ({
                         </p>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                          {enrolledStudents.map((stu) => (
-                            <div
-                              key={stu.id}
-                              className="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs flex items-center gap-2.5"
-                            >
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-[11px] shrink-0 ${stu.avatarColor}`}>
-                                {stu.name.charAt(0)}
+                          {enrolledStudents.map((stu) => {
+                            const isRemoving = removingStudentTag === `${stu.id}_${cls.tag}`;
+                            return (
+                              <div
+                                key={stu.id}
+                                className="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between gap-2.5 group hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-[11px] shrink-0 ${stu.avatarColor}`}>
+                                    {stu.name.charAt(0)}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-slate-900 dark:text-white truncate">
+                                      {stu.name}
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                      Year {stu.yearGroup} · {stu.parentName}
+                                    </p>
+                                  </div>
+                                </div>
+                                {onRemoveTag && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveStudentFromClass(stu, cls.tag)}
+                                    disabled={isRemoving}
+                                    className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 p-1 rounded transition-colors shrink-0"
+                                    title={`Unenroll ${stu.name} and remove "${cls.tag}" in GoHighLevel`}
+                                  >
+                                    {isRemoving ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                                    ) : (
+                                      <X className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                )}
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-semibold text-slate-900 dark:text-white truncate">
-                                  {stu.name}
-                                </p>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                  Year {stu.yearGroup} · {stu.parentName}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

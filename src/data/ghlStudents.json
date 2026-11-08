@@ -1237,6 +1237,28 @@
     "notes": "GoHighLevel Contact (NAGHgUighvs8vORp2NK9)"
   },
   {
+    "id": "HEsI2Ev1dwIrFsHINqFj",
+    "name": "123",
+    "email": "waduhek.sr@gmail.com",
+    "parentName": "scott",
+    "parentPhone": "+639912222222",
+    "parentEmail": "waduhek.sr@gmail.com",
+    "yearGroup": 11,
+    "tags": [
+      "replied yes",
+      "first login",
+      "appt done `26-`27",
+      "send access - year 11",
+      "existing member",
+      "'26-'27 year 11 foundation maths (2)(tue 6pm)"
+    ],
+    "targetGrades": {
+      "GCSE": "Target 8-9"
+    },
+    "avatarColor": "bg-teal-600",
+    "notes": "GoHighLevel Contact (HEsI2Ev1dwIrFsHINqFj)"
+  },
+  {
     "id": "XvR1M3oiYwbjb6zBgBED",
     "name": "Ben Roffey",
     "email": "tonggoku@yahoo.com",
@@ -1271,7 +1293,7 @@
     "targetGrades": {
       "GCSE": "Target 7-8"
     },
-    "avatarColor": "bg-teal-600",
+    "avatarColor": "bg-cyan-600",
     "notes": "GoHighLevel Contact (XvR1M3oiYwbjb6zBgBED)"
   },
   {
@@ -1317,33 +1339,8 @@
     "targetGrades": {
       "GCSE": "Target 8-9"
     },
-    "avatarColor": "bg-cyan-600",
-    "notes": "GoHighLevel Contact (6zEdlo8ZF3UJwloxVsL7)"
-  },
-  {
-    "id": "66lNGQ01pIq8sdE0J6rD",
-    "name": "test blad",
-    "email": "test.blad@smarta.co.uk",
-    "parentName": "test",
-    "parentPhone": "+447492885818",
-    "parentEmail": "",
-    "yearGroup": 11,
-    "tags": [
-      "smarta lead",
-      "december",
-      "prospect replied",
-      "outbound called",
-      "booked call",
-      "confirmed appt",
-      "booked call `26-`27",
-      "appt-upcoming",
-      "'26-'27 year 11 foundation maths (2)(tue 6pm)"
-    ],
-    "targetGrades": {
-      "GCSE": "Target 8-9"
-    },
     "avatarColor": "bg-indigo-600",
-    "notes": "GoHighLevel Contact (66lNGQ01pIq8sdE0J6rD)"
+    "notes": "GoHighLevel Contact (6zEdlo8ZF3UJwloxVsL7)"
   },
   {
     "id": "FnB2Cjsv5kdI1ANT6iw5",

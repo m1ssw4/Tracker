@@ -254,6 +254,142 @@ export default function App() {
     showToast('Student roster and class tags updated');
   };
 
+  // Real-time tag removal synchronized with GoHighLevel API
+  const handleRemoveStudentTag = async (studentId: string, tagToRemove: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const previousStudents = [...students];
+    const previousSessions = [...sessions];
+
+    // Optimistic local update
+    const nextTags = student.tags.filter(t => normalizeTag(t) !== normalizeTag(tagToRemove) && t !== tagToRemove);
+    const updatedStudent = { ...student, tags: nextTags };
+    const updatedStudents = students.map(s => s.id === studentId ? updatedStudent : s);
+
+    setStudents(updatedStudents);
+    saveStudents(updatedStudents);
+
+    // Unenroll from session timetable in real-time
+    const normTag = normalizeTag(tagToRemove);
+    setSessions(prevSessions => {
+      const updated = prevSessions.map(sess => {
+        const normSessTag = normalizeTag(sess.classTag);
+        if (normSessTag === normTag || normSessTag.includes(normTag) || normTag.includes(normSessTag)) {
+          const stillHasOtherMatchingTag = nextTags.some(t => {
+            const nt = normalizeTag(t);
+            return nt === normSessTag || nt.includes(normSessTag) || normSessTag.includes(nt);
+          });
+          if (!stillHasOtherMatchingTag) {
+            return {
+              ...sess,
+              attendance: (sess.attendance || []).filter(a => a.studentId !== studentId)
+            };
+          }
+        }
+        return sess;
+      });
+      saveSessions(updated);
+      return updated;
+    });
+
+    try {
+      const res = await fetch(`/api/contacts/${encodeURIComponent(studentId)}/tags`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag: tagToRemove })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data.updatedTags)) {
+        setStudents(prev => prev.map(s => s.id === studentId ? { ...s, tags: data.updatedTags } : s));
+      }
+
+      showToast(`Removed tag "${tagToRemove}" from ${student.name} in GoHighLevel in real-time!`);
+    } catch (err: any) {
+      console.error('Failed to remove tag in GoHighLevel', err);
+      // Revert on network/API failure
+      setStudents(previousStudents);
+      saveStudents(previousStudents);
+      setSessions(previousSessions);
+      saveSessions(previousSessions);
+      showToast(`Failed to remove tag in GoHighLevel: ${err?.message || 'Error'}`);
+      throw err;
+    }
+  };
+
+  // Real-time tag addition synchronized with GoHighLevel API
+  const handleAddStudentTag = async (studentId: string, tagToAdd: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const previousStudents = [...students];
+    const previousSessions = [...sessions];
+
+    const nextTags = [...student.tags, tagToAdd];
+    const updatedStudent = { ...student, tags: nextTags };
+    const updatedStudents = students.map(s => s.id === studentId ? updatedStudent : s);
+
+    setStudents(updatedStudents);
+    saveStudents(updatedStudents);
+
+    // Enroll in session timetable in real-time
+    const normTag = normalizeTag(tagToAdd);
+    setSessions(prevSessions => {
+      const updated = prevSessions.map(sess => {
+        const normSessTag = normalizeTag(sess.classTag);
+        if (normSessTag === normTag || normSessTag.includes(normTag) || normTag.includes(normSessTag)) {
+          const alreadyIn = sess.attendance?.some(a => a.studentId === studentId);
+          if (!alreadyIn) {
+            return {
+              ...sess,
+              attendance: [
+                ...(sess.attendance || []),
+                { studentId: student.id, studentName: student.name, status: 'present' as const }
+              ]
+            };
+          }
+        }
+        return sess;
+      });
+      saveSessions(updated);
+      return updated;
+    });
+
+    try {
+      const res = await fetch(`/api/contacts/${encodeURIComponent(studentId)}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag: tagToAdd })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data.updatedTags)) {
+        setStudents(prev => prev.map(s => s.id === studentId ? { ...s, tags: data.updatedTags } : s));
+      }
+
+      showToast(`Added tag "${tagToAdd}" to ${student.name} in GoHighLevel in real-time!`);
+    } catch (err: any) {
+      console.error('Failed to add tag in GoHighLevel', err);
+      setStudents(previousStudents);
+      saveStudents(previousStudents);
+      setSessions(previousSessions);
+      saveSessions(previousSessions);
+      showToast(`Failed to add tag in GoHighLevel: ${err?.message || 'Error'}`);
+      throw err;
+    }
+  };
+
   const handleSaveApiConfig = (newConfig: ApiConfig) => {
     setApiConfig(newConfig);
     saveApiConfig(newConfig);
@@ -322,6 +458,7 @@ export default function App() {
               setActiveAttendanceSession(sess);
               setIsAttendanceModalOpen(true);
             }}
+            onRemoveTag={handleRemoveStudentTag}
           />
         )}
 
@@ -332,6 +469,8 @@ export default function App() {
             sessions={sessions}
             isAdminUnlocked={isAdminUnlocked}
             onOpenAdminModal={() => setIsAdminModalOpen(true)}
+            onRemoveTag={handleRemoveStudentTag}
+            onAddTag={handleAddStudentTag}
           />
         )}
 

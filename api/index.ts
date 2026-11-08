@@ -478,6 +478,169 @@ app.get('/api/contacts/:contactId/notes', async (req: Request, res: Response) =>
     return res.status(500).json({ success: false, error: err?.message });
   }
 });
+
+// Helper to update cached student tags immediately
+function updateCachedStudentTags(contactId: string, updatedTags: string[]) {
+  if (liveStudentsCache && Array.isArray(liveStudentsCache.data)) {
+    const student = liveStudentsCache.data.find(s => s.id === contactId);
+    if (student) {
+      student.tags = updatedTags;
+    }
+    try {
+      const jsonPath = path.resolve(process.cwd(), 'src/data/ghlStudents.json');
+      fs.writeFileSync(jsonPath, JSON.stringify(liveStudentsCache.data, null, 2));
+    } catch (e) {
+      console.warn('Failed to update ghlStudents.json on tag change', e);
+    }
+  }
+}
+
+// Remove tag(s) from a GoHighLevel contact in real-time
+const handleRemoveContactTag = async (req: Request, res: Response) => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
+  }
+
+  const { contactId } = req.params;
+  const tag = req.body?.tag || (req.query?.tag as string);
+  const tags = req.body?.tags || (tag ? [tag] : []);
+
+  if (!Array.isArray(tags) || tags.length === 0) {
+    return res.status(400).json({ success: false, error: 'At least one tag is required to remove' });
+  }
+
+  try {
+    const ghlRes = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/tags`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Version': '2021-07-28',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ tags })
+    });
+
+    if (!ghlRes.ok) {
+      const errText = await ghlRes.text();
+      return res.status(ghlRes.status).json({
+        success: false,
+        error: `GoHighLevel API error (${ghlRes.status}): ${errText}`
+      });
+    }
+
+    const data: any = await ghlRes.json();
+    const remainingTags = Array.isArray(data?.tags) ? data.tags : [];
+
+    // Update in-memory cache and persisted cache immediately
+    updateCachedStudentTags(contactId, remainingTags);
+
+    // Add note to contact timeline in GoHighLevel
+    try {
+      const noteBody = `🏷️ Class Tag Removed via TutorTrack: "${tags.join('", "')}"\nRemaining Tags: ${remainingTags.join(', ') || 'None'}`;
+      await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/notes`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'Version': '2021-07-28',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ body: noteBody })
+      });
+    } catch (noteErr) {
+      console.warn('Could not post tag removal note to GHL', noteErr);
+    }
+
+    return res.json({
+      success: true,
+      contactId,
+      removedTags: tags,
+      updatedTags: remainingTags,
+      message: `Successfully removed tag(s) from GoHighLevel in real-time!`
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Failed to remove tag in GoHighLevel: ${err?.message}`
+    });
+  }
+};
+
+app.delete('/api/contacts/:contactId/tags', handleRemoveContactTag);
+app.post('/api/contacts/:contactId/tags/remove', handleRemoveContactTag);
+
+// Add tag(s) to a GoHighLevel contact in real-time
+app.post('/api/contacts/:contactId/tags', async (req: Request, res: Response) => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
+  }
+
+  const { contactId } = req.params;
+  const tag = req.body?.tag;
+  const tags = req.body?.tags || (tag ? [tag] : []);
+
+  if (!Array.isArray(tags) || tags.length === 0) {
+    return res.status(400).json({ success: false, error: 'At least one tag is required to add' });
+  }
+
+  try {
+    const ghlRes = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/tags`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Version': '2021-07-28',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ tags })
+    });
+
+    if (!ghlRes.ok) {
+      const errText = await ghlRes.text();
+      return res.status(ghlRes.status).json({
+        success: false,
+        error: `GoHighLevel API error (${ghlRes.status}): ${errText}`
+      });
+    }
+
+    const data: any = await ghlRes.json();
+    const updatedTags = Array.isArray(data?.tags) ? data.tags : [];
+
+    updateCachedStudentTags(contactId, updatedTags);
+
+    try {
+      const noteBody = `🏷️ Class Tag Added via TutorTrack: "${tags.join('", "')}"\nActive Tags: ${updatedTags.join(', ')}`;
+      await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/notes`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'Version': '2021-07-28',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ body: noteBody })
+      });
+    } catch (noteErr) {
+      console.warn('Could not post tag addition note to GHL', noteErr);
+    }
+
+    return res.json({
+      success: true,
+      contactId,
+      addedTags: tags,
+      updatedTags,
+      message: `Successfully added tag(s) to GoHighLevel in real-time!`
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Failed to add tag in GoHighLevel: ${err?.message}`
+    });
+  }
+});
 // Send real SMS or Email to a student / parent via GoHighLevel Conversations API
 app.post('/api/crm/send-message', async (req: Request, res: Response) => {
   const apiKey = getApiKey();

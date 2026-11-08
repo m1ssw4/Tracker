@@ -29,6 +29,8 @@ interface StudentsViewProps {
   sessions: LessonSession[];
   isAdminUnlocked?: boolean;
   onOpenAdminModal?: () => void;
+  onRemoveTag?: (studentId: string, tag: string) => Promise<void> | void;
+  onAddTag?: (studentId: string, tag: string) => Promise<void> | void;
 }
 
 export const StudentsView: React.FC<StudentsViewProps> = ({
@@ -36,7 +38,9 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   onUpdateStudents,
   sessions,
   isAdminUnlocked = false,
-  onOpenAdminModal
+  onOpenAdminModal,
+  onRemoveTag,
+  onAddTag
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [yearFilter, setYearFilter] = useState<'All' | '10' | '11'>('All');
@@ -44,6 +48,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<Student | null>(null);
   const [editingStudentTags, setEditingStudentTags] = useState<Student | null>(null);
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
+
+  // Real-time tag modification state
+  const [activeTagAction, setActiveTagAction] = useState<{ studentId: string; tag: string; action: 'removing' | 'adding' } | null>(null);
+  const [tagToRemoveConfirmation, setTagToRemoveConfirmation] = useState<{ student: Student; tag: string } | null>(null);
 
   // GoHighLevel Contact Notes drawer state
   const [drawerTab, setDrawerTab] = useState<'attendance' | 'ghl_notes'>('attendance');
@@ -62,6 +70,81 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
     navigator.clipboard.writeText(tag);
     setCopiedTag(tag);
     setTimeout(() => setCopiedTag(null), 2000);
+  };
+
+  // Real-time tag removal synchronized with GHL
+  const handleTriggerRemoveTag = async (student: Student, tagToRemove: string) => {
+    setActiveTagAction({ studentId: student.id, tag: tagToRemove, action: 'removing' });
+    try {
+      if (onRemoveTag) {
+        await onRemoveTag(student.id, tagToRemove);
+      } else {
+        const nextTags = student.tags.filter(t => normalizeTag(t) !== normalizeTag(tagToRemove) && t !== tagToRemove);
+        const updated = { ...student, tags: nextTags };
+        onUpdateStudents(
+          students.map(s => s.id === updated.id ? updated : s),
+          updated.id,
+          `Removed class tag: "${tagToRemove}"`
+        );
+      }
+
+      // Keep editing modal state updated
+      if (editingStudentTags && editingStudentTags.id === student.id) {
+        setEditingStudentTags(prev => prev ? {
+          ...prev,
+          tags: prev.tags.filter(t => normalizeTag(t) !== normalizeTag(tagToRemove) && t !== tagToRemove)
+        } : null);
+      }
+
+      // Keep drawer state updated
+      if (selectedStudentForHistory && selectedStudentForHistory.id === student.id) {
+        setSelectedStudentForHistory(prev => prev ? {
+          ...prev,
+          tags: prev.tags.filter(t => normalizeTag(t) !== normalizeTag(tagToRemove) && t !== tagToRemove)
+        } : null);
+      }
+    } catch (err) {
+      console.error('Error removing tag in GHL', err);
+    } finally {
+      setActiveTagAction(null);
+      setTagToRemoveConfirmation(null);
+    }
+  };
+
+  // Real-time tag addition synchronized with GHL
+  const handleTriggerAddTag = async (student: Student, tagToAdd: string) => {
+    setActiveTagAction({ studentId: student.id, tag: tagToAdd, action: 'adding' });
+    try {
+      if (onAddTag) {
+        await onAddTag(student.id, tagToAdd);
+      } else {
+        const nextTags = [...student.tags, tagToAdd];
+        const updated = { ...student, tags: nextTags };
+        onUpdateStudents(
+          students.map(s => s.id === updated.id ? updated : s),
+          updated.id,
+          `Added class tag: "${tagToAdd}"`
+        );
+      }
+
+      if (editingStudentTags && editingStudentTags.id === student.id) {
+        setEditingStudentTags(prev => prev ? {
+          ...prev,
+          tags: [...prev.tags, tagToAdd]
+        } : null);
+      }
+
+      if (selectedStudentForHistory && selectedStudentForHistory.id === student.id) {
+        setSelectedStudentForHistory(prev => prev ? {
+          ...prev,
+          tags: [...prev.tags, tagToAdd]
+        } : null);
+      }
+    } catch (err) {
+      console.error('Error adding tag in GHL', err);
+    } finally {
+      setActiveTagAction(null);
+    }
   };
 
   // Compute attendance stats per student across past sessions
@@ -339,22 +422,41 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    {stu.tags.map((tag) => (
-                      <div
-                        key={tag}
-                        className="flex items-center justify-between px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-700 dark:text-slate-300"
-                      >
-                        <span className="truncate max-w-[280px] sm:max-w-[340px]">{tag}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyTag(tag)}
-                          className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 ml-2 shrink-0"
-                          title="Copy tag"
+                    {stu.tags.length === 0 ? (
+                      <p className="text-[11px] text-slate-400 italic">No class tags assigned</p>
+                    ) : (
+                      stu.tags.map((tag) => (
+                        <div
+                          key={tag}
+                          className="flex items-center justify-between px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-700 dark:text-slate-300 group hover:bg-slate-200/60 dark:hover:bg-slate-750 transition-colors"
                         >
-                          {copiedTag === tag ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                        </button>
-                      </div>
-                    ))}
+                          <span className="truncate max-w-[210px] sm:max-w-[300px]" title={tag}>{tag}</span>
+                          <div className="flex items-center gap-1 ml-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyTag(tag)}
+                              className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-0.5 rounded transition-colors"
+                              title="Copy tag"
+                            >
+                              {copiedTag === tag ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTagToRemoveConfirmation({ student: stu, tag })}
+                              disabled={activeTagAction?.studentId === stu.id && activeTagAction?.tag === tag}
+                              className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 p-0.5 rounded transition-colors"
+                              title={`Remove tag "${tag}" and reflect in GoHighLevel in real-time`}
+                            >
+                              {activeTagAction?.studentId === stu.id && activeTagAction?.tag === tag ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-rose-500" />
+                              ) : (
+                                <X className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -644,11 +746,17 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
             <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Manage Tags: {editingStudentTags.name}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Select which of the 27 official class tags apply to this student
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Manage Tags: {editingStudentTags.name}
+                  </h3>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-medium flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Real-Time GHL Sync
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Adding or removing tags updates the contact in GoHighLevel and class rosters immediately.
                 </p>
               </div>
               <button
@@ -659,32 +767,89 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-2 flex-1">
-              {TUTORING_CLASSES.map(cls => {
-                const isSelected = editingStudentTags.tags.some(t => normalizeTag(t) === normalizeTag(cls.tag));
-                return (
-                  <button
-                    key={cls.id}
-                    type="button"
-                    onClick={() => handleToggleTag(cls.tag)}
-                    className={`w-full p-2.5 rounded-lg border text-left text-xs transition-colors flex items-center justify-between gap-3 ${
-                      isSelected
-                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-slate-900 dark:text-white'
-                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <p className="font-semibold">{cls.name}</p>
-                      <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{cls.tag}</p>
-                    </div>
-                    <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${
-                      isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700'
-                    }`}>
-                      {isSelected && <Check className="w-3.5 h-3.5" />}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {/* Active Assigned Tags Strip */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/80 space-y-2">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <TagIcon className="w-3.5 h-3.5 text-indigo-500" />
+                  Currently Assigned Tags ({editingStudentTags.tags.length}):
+                </span>
+                {editingStudentTags.tags.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No class tags currently assigned to this student.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                    {editingStudentTags.tags.map(t => {
+                      const isRemoving = activeTagAction?.studentId === editingStudentTags.id && activeTagAction?.tag === t;
+                      return (
+                        <span
+                          key={t}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-mono group"
+                        >
+                          <span className="truncate max-w-[200px]">{t}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleTriggerRemoveTag(editingStudentTags, t)}
+                            disabled={isRemoving}
+                            className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded p-0.5 transition-colors ml-1"
+                            title="Remove tag and sync to GoHighLevel"
+                          >
+                            {isRemoving ? <Loader2 className="w-3 h-3 animate-spin text-rose-500" /> : <X className="w-3 h-3" />}
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* All Official Classes */}
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Select Cohort to Enroll / Unenroll:
+                </div>
+                {TUTORING_CLASSES.map(cls => {
+                  const isSelected = editingStudentTags.tags.some(t => normalizeTag(t) === normalizeTag(cls.tag));
+                  const isBusy = activeTagAction?.studentId === editingStudentTags.id && activeTagAction?.tag === cls.tag;
+                  return (
+                    <button
+                      key={cls.id}
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => {
+                        if (isSelected) {
+                          handleTriggerRemoveTag(editingStudentTags, cls.tag);
+                        } else {
+                          handleTriggerAddTag(editingStudentTags, cls.tag);
+                        }
+                      }}
+                      className={`w-full p-2.5 rounded-lg border text-left text-xs transition-colors flex items-center justify-between gap-3 ${
+                        isSelected
+                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-slate-900 dark:text-white'
+                          : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <div>
+                        <p className="font-semibold">{cls.name}</p>
+                        <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{cls.tag}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                          {isSelected ? 'Enrolled (Click to Remove)' : 'Click to Enroll'}
+                        </span>
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${
+                          isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700'
+                        }`}>
+                          {isBusy ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                          ) : isSelected ? (
+                            <Check className="w-3.5 h-3.5" />
+                          ) : null}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
@@ -693,6 +858,67 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                 className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Removing Tag */}
+      {tagToRemoveConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <TagIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Remove Tag from GoHighLevel?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Student: <strong>{tagToRemoveConfirmation.student.name}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700/60 space-y-1.5 text-xs">
+              <div className="text-slate-600 dark:text-slate-400 font-medium">
+                Tag to remove:
+              </div>
+              <div className="font-mono font-semibold text-rose-600 dark:text-rose-400 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded border border-rose-200 dark:border-rose-900/60 break-all">
+                {tagToRemoveConfirmation.tag}
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px] pt-1 leading-relaxed">
+                ⚡ This will delete this tag from the contact in <strong>GoHighLevel</strong> in real-time and unenroll them from the corresponding class session register.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setTagToRemoveConfirmation(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={activeTagAction !== null}
+                onClick={() => handleTriggerRemoveTag(tagToRemoveConfirmation.student, tagToRemoveConfirmation.tag)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-60"
+              >
+                {activeTagAction !== null ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Removing from GHL...</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="w-3.5 h-3.5" />
+                    <span>Remove Tag in GHL</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
