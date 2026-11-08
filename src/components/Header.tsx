@@ -1,5 +1,5 @@
 import React from 'react';
-import { Key, Moon, Sun, ShieldCheck, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Key, Moon, Sun, ShieldCheck, ShieldAlert, RefreshCw, Lock, LockOpen } from 'lucide-react';
 import { ApiConfig } from '../types';
 
 export type ActiveTab = 'schedules' | 'attendance' | 'classes' | 'students' | 'reports';
@@ -13,6 +13,8 @@ interface HeaderProps {
   onToggleTheme: () => void;
   onSyncCrm?: () => void;
   isSyncingCrm?: boolean;
+  isAdminUnlocked?: boolean;
+  onOpenAdminModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,7 +25,9 @@ export const Header: React.FC<HeaderProps> = ({
   isDark,
   onToggleTheme,
   onSyncCrm,
-  isSyncingCrm = false
+  isSyncingCrm = false,
+  isAdminUnlocked = false,
+  onOpenAdminModal
 }) => {
   const isApiConnected = apiConfig.status === 'connected' || apiConfig.apiKey.trim().length > 0;
 
@@ -96,6 +100,25 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
+
+          {onOpenAdminModal && (
+            <button
+              onClick={onOpenAdminModal}
+              title={isAdminUnlocked ? "Admin Mode Active (GHL Links Visible) - Click to Manage/Lock" : "Admin Mode Locked (GHL Links Hidden) - Click to Unlock"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap ${
+                isAdminUnlocked
+                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              {isAdminUnlocked ? (
+                <LockOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+              )}
+              <span>{isAdminUnlocked ? 'Admin Mode' : 'Admin Lock'}</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenApiModal}

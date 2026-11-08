@@ -11,6 +11,7 @@ interface AttendanceLoggerModalProps {
   onSaveAttendance: (sessionId: string, entries: StudentAttendanceEntry[]) => Promise<void> | void;
   allStudents: Student[];
   apiConfig: ApiConfig;
+  isAdminUnlocked?: boolean;
 }
 
 export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
@@ -19,7 +20,8 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
   onClose,
   onSaveAttendance,
   allStudents,
-  apiConfig
+  apiConfig,
+  isAdminUnlocked = false
 }) => {
   if (!isOpen || !session) return null;
 
@@ -214,16 +216,18 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
                             Year {studentDetail.yearGroup}
                           </span>
                         )}
-                        <a
-                          href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${entry.studentId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs flex items-center gap-0.5 transition-colors"
-                          title="Open contact in GoHighLevel"
-                        >
-                          <span className="text-[11px] font-mono">GHL</span>
-                          <ExternalLink className="w-3 h-3 text-indigo-500" />
-                        </a>
+                        {isAdminUnlocked && (
+                          <a
+                            href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${entry.studentId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs flex items-center gap-0.5 transition-colors"
+                            title="Open contact in GoHighLevel"
+                          >
+                            <span className="text-[11px] font-mono">GHL</span>
+                            <ExternalLink className="w-3 h-3 text-indigo-500" />
+                          </a>
+                        )}
                       </div>
                       {studentDetail && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -423,6 +427,7 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
             time: `${session.startTime} - ${session.endTime}`,
             tutor: session.tutor
           }}
+          isAdminUnlocked={isAdminUnlocked}
         />
       )}
     </div>

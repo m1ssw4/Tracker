@@ -22,6 +22,7 @@ import { StudentsView } from './components/StudentsView';
 import { AnalyticsReportsView } from './components/AnalyticsReportsView';
 import { AttendanceLoggerModal } from './components/AttendanceLoggerModal';
 import { ApiIntegrationModal } from './components/ApiIntegrationModal';
+import { AdminPasskeyModal } from './components/AdminPasskeyModal';
 import { CheckCircle2, ShieldCheck, X } from 'lucide-react';
 
 export default function App() {
@@ -31,6 +32,22 @@ export default function App() {
   const [apiConfig, setApiConfig] = useState<ApiConfig>(() => loadApiConfig());
   const [isSyncingCrm, setIsSyncingCrm] = useState<boolean>(false);
   
+  // Admin privilege / passkey lock state (defaults to locked to protect GHL links)
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tutortrack_admin_unlocked') === 'true';
+    }
+    return false;
+  });
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+
+  const handleSetAdminUnlocked = (unlocked: boolean) => {
+    setIsAdminUnlocked(unlocked);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tutortrack_admin_unlocked', unlocked ? 'true' : 'false');
+    }
+  };
+
   // Theme state
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -256,6 +273,8 @@ export default function App() {
         onToggleTheme={() => setIsDark(!isDark)}
         onSyncCrm={() => fetchLiveCrmData(false)}
         isSyncingCrm={isSyncingCrm}
+        isAdminUnlocked={isAdminUnlocked}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
       />
 
       {/* Location ID sync prompt banner if not yet provided */}
@@ -311,6 +330,8 @@ export default function App() {
             students={students}
             onUpdateStudents={handleUpdateStudents}
             sessions={sessions}
+            isAdminUnlocked={isAdminUnlocked}
+            onOpenAdminModal={() => setIsAdminModalOpen(true)}
           />
         )}
 
@@ -333,6 +354,7 @@ export default function App() {
         onSaveAttendance={handleSaveAttendance}
         allStudents={students}
         apiConfig={apiConfig}
+        isAdminUnlocked={isAdminUnlocked}
       />
 
       <ApiIntegrationModal
@@ -341,6 +363,14 @@ export default function App() {
         config={apiConfig}
         onSaveConfig={handleSaveApiConfig}
         onImportContacts={handleImportCrmStudents}
+      />
+
+      <AdminPasskeyModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        isAdminUnlocked={isAdminUnlocked}
+        onSetAdminUnlocked={handleSetAdminUnlocked}
+        onNotify={(msg) => setToastMessage(msg)}
       />
 
       {/* Toast Notification */}
