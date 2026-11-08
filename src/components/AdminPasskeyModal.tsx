@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LockOpen, Key, Shield, ShieldCheck, X, Eye, EyeOff, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Lock, LockOpen, Key, Shield, ShieldCheck, X, Eye, EyeOff, AlertCircle, CheckCircle2, RotateCcw, Sliders } from 'lucide-react';
 
 interface AdminPasskeyModalProps {
   isOpen: boolean;
@@ -7,6 +7,7 @@ interface AdminPasskeyModalProps {
   isAdminUnlocked: boolean;
   onSetAdminUnlocked: (unlocked: boolean) => void;
   onNotify?: (message: string) => void;
+  onOpenApiModal?: () => void;
 }
 
 const DEFAULT_PASSKEY = 'smarta2026';
@@ -25,7 +26,8 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
   onClose,
   isAdminUnlocked,
   onSetAdminUnlocked,
-  onNotify
+  onNotify,
+  onOpenApiModal
 }) => {
   if (!isOpen) return null;
 
@@ -55,11 +57,11 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
     const stored = getStoredPasskey();
     if (passkeyInput.trim() === stored) {
       onSetAdminUnlocked(true);
-      setSuccess('Admin privilege unlocked! GoHighLevel contact links are now visible.');
-      if (onNotify) onNotify('Admin mode unlocked - GHL direct links visible');
+      setSuccess('Admin privilege unlocked! The "API Connected" button is now visible in the header.');
+      if (onNotify) onNotify('Admin mode unlocked - "API Connected" option is now visible');
       setTimeout(() => {
         onClose();
-      }, 1000);
+      }, 900);
     } else {
       setError('Incorrect passkey. Please try again.');
     }
@@ -67,8 +69,8 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
 
   const handleLock = () => {
     onSetAdminUnlocked(false);
-    setSuccess('Admin privilege locked. GHL contact links are now hidden.');
-    if (onNotify) onNotify('Admin mode locked - GHL links hidden from tutors');
+    setSuccess('Admin privilege locked. "API Connected" button is now hidden.');
+    if (onNotify) onNotify('Admin mode locked - "API Connected" option is hidden');
     setTimeout(() => {
       onClose();
     }, 800);
@@ -125,10 +127,10 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Admin Privilege & Privacy
+                Admin Privilege & API Security
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isAdminUnlocked ? 'Admin Mode is currently Active' : 'Protected by Private Passkey'}
+                {isAdminUnlocked ? 'Admin Mode is currently Active' : 'Protected by Admin Passkey'}
               </p>
             </div>
           </div>
@@ -147,10 +149,10 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
           <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-1.5">
             <div className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200">
               <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>GHL Contact Link Visibility</span>
+              <span>API Connected Option Visibility</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              When <strong>Locked</strong>, direct GoHighLevel CRM contact links (<code className="font-mono text-[10px] bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded">/contacts/detail/...</code>) and CRM record buttons are hidden so tutors and non-admins cannot access your internal CRM portal.
+              When <strong>Locked</strong>, the <strong>API Connected</strong> button and GoHighLevel integration setup dialog are hidden from the navigation bar so students, tutors, and general users cannot see or modify your API keys and endpoints.
             </p>
           </div>
 
@@ -175,7 +177,7 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
               <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-amber-900 dark:text-amber-200 block">Admin Mode Active</span>
-                  <span className="text-[11px] text-amber-700 dark:text-amber-400">All GHL links are visible and active</span>
+                  <span className="text-[11px] text-amber-700 dark:text-amber-400">"API Connected" option is visible in the header</span>
                 </div>
                 <button
                   type="button"
@@ -183,9 +185,23 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
                   className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
                 >
                   <Lock className="w-3.5 h-3.5" />
-                  <span>Lock GHL Links</span>
+                  <span>Hide API Option</span>
                 </button>
               </div>
+
+              {onOpenApiModal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenApiModal();
+                  }}
+                  className="w-full py-2.5 px-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-semibold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Sliders className="w-4 h-4" />
+                  <span>Open API Integration & Settings</span>
+                </button>
+              )}
 
               {!isChangingPasskey ? (
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -222,7 +238,7 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
                       autoFocus
                       value={passkeyInput}
                       onChange={(e) => { setPasskeyInput(e.target.value); setError(null); }}
-                      placeholder="Enter passkey to view GHL links..."
+                      placeholder="Enter passkey to reveal API Connected..."
                       className="w-full px-3 py-2 pr-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
                     />
                     <button
@@ -234,7 +250,7 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
                     </button>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Default passkey: <code className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">{DEFAULT_PASSKEY}</code> (you can customize it once unlocked)
+                    Default passkey: <code className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">{DEFAULT_PASSKEY}</code> (can be customized once unlocked)
                   </p>
                 </div>
 
@@ -251,7 +267,7 @@ export const AdminPasskeyModal: React.FC<AdminPasskeyModalProps> = ({
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg flex items-center gap-1.5 shadow-sm transition-colors"
                   >
                     <LockOpen className="w-3.5 h-3.5" />
-                    <span>Unlock GHL Links</span>
+                    <span>Reveal API Connected</span>
                   </button>
                 </div>
               </form>

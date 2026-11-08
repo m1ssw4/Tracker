@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenAdminModal && (
             <button
               onClick={onOpenAdminModal}
-              title={isAdminUnlocked ? "Admin Mode Active (GHL Links Visible) - Click to Manage/Lock" : "Admin Mode Locked (GHL Links Hidden) - Click to Unlock"}
+              title={isAdminUnlocked ? "Admin Mode Active (API Connected is visible) - Click to manage or lock" : "Admin Protected - Click to enter passkey to reveal API Connected option"}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap ${
                 isAdminUnlocked
                   ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40'
@@ -116,25 +116,29 @@ export const Header: React.FC<HeaderProps> = ({
               ) : (
                 <Lock className="w-3.5 h-3.5 text-slate-500" />
               )}
-              <span>{isAdminUnlocked ? 'Admin Mode' : 'Admin Lock'}</span>
+              <span>{isAdminUnlocked ? 'Admin Mode' : 'Admin'}</span>
             </button>
           )}
 
-          <button
-            onClick={onOpenApiModal}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap ${
-              isApiConnected
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent shadow-sm'
-            }`}
-          >
-            {isApiConnected ? (
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            ) : (
-              <Key className="w-3.5 h-3.5 shrink-0" />
-            )}
-            <span>{isApiConnected ? 'API Connected' : 'Connect API Key'}</span>
-          </button>
+          {/* CRITICAL: ONLY show API Connected option when unlocked with Admin Passkey! */}
+          {isAdminUnlocked && (
+            <button
+              onClick={onOpenApiModal}
+              title="API Integration Settings & Diagnostics (Admin Only)"
+              className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap animate-fade-in ${
+                isApiConnected
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent shadow-sm'
+              }`}
+            >
+              {isApiConnected ? (
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              ) : (
+                <Key className="w-3.5 h-3.5 shrink-0" />
+              )}
+              <span>{isApiConnected ? 'API Connected' : 'Connect API Key'}</span>
+            </button>
+          )}
         </div>
 
       </div>

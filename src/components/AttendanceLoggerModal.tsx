@@ -216,18 +216,16 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
                             Year {studentDetail.yearGroup}
                           </span>
                         )}
-                        {isAdminUnlocked && (
-                          <a
-                            href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${entry.studentId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs flex items-center gap-0.5 transition-colors"
-                            title="Open contact in GoHighLevel"
-                          >
-                            <span className="text-[11px] font-mono">GHL</span>
-                            <ExternalLink className="w-3 h-3 text-indigo-500" />
-                          </a>
-                        )}
+                        <a
+                          href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${entry.studentId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs flex items-center gap-0.5 transition-colors"
+                          title="Open contact in GoHighLevel"
+                        >
+                          <span className="text-[11px] font-mono">GHL</span>
+                          <ExternalLink className="w-3 h-3 text-indigo-500" />
+                        </a>
                       </div>
                       {studentDetail && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">

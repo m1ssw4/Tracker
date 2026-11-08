@@ -371,6 +371,7 @@ export default function App() {
         isAdminUnlocked={isAdminUnlocked}
         onSetAdminUnlocked={handleSetAdminUnlocked}
         onNotify={(msg) => setToastMessage(msg)}
+        onOpenApiModal={() => setIsApiModalOpen(true)}
       />
 
       {/* Toast Notification */}
@@ -393,18 +394,20 @@ export default function App() {
           <p>
             TutorTrack '26-'27 Academic Portal · Tracking Year 10, Year 11 & GCSE Exam Prep Cohorts
           </p>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 font-mono text-[11px]">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
-              {apiConfig.apiKey ? 'API Integration Connected' : 'Local Storage Cache (Awaiting API Key)'}
-            </span>
-            <button
-              onClick={() => setIsApiModalOpen(true)}
-              className="text-indigo-600 dark:text-indigo-400 hover:underline"
-            >
-              Configure API
-            </button>
-          </div>
+          {isAdminUnlocked && (
+            <div className="flex items-center gap-4 animate-fade-in">
+              <span className="flex items-center gap-1 font-mono text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
+                {apiConfig.apiKey ? 'API Integration Connected' : 'Local Storage Cache (Awaiting API Key)'}
+              </span>
+              <button
+                onClick={() => setIsApiModalOpen(true)}
+                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                Configure API
+              </button>
+            </div>
+          )}
         </div>
       </footer>
 
