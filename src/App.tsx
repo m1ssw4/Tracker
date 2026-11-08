@@ -62,6 +62,11 @@ export default function App() {
 
   // Sync server-side CRM status and load real GHL students on mount
   useEffect(() => {
+    // Proactively purge any stale client cache containing old setter values
+    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4'].forEach(k => {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
+
     fetch('/api/crm/status')
       .then(res => res.json())
       .then(data => {
@@ -78,7 +83,7 @@ export default function App() {
       .catch(() => {});
 
     // Automatically pull real contacts from GoHighLevel
-    fetch('/api/contacts')
+    fetch('/api/contacts?force=true')
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.students) && data.students.length > 0) {
@@ -159,7 +164,13 @@ export default function App() {
 
       const newAttendance: StudentAttendanceEntry[] = matched.map(stu => {
         const existing = sess.attendance?.find(a => a.studentId === stu.id);
-        return existing || {
+        if (existing) {
+          return {
+            ...existing,
+            studentName: stu.name // Always use the true Student First & Last Name
+          };
+        }
+        return {
           studentId: stu.id,
           studentName: stu.name,
           status: 'present'

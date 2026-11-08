@@ -138,21 +138,86 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
     const data: any = await response.json();
     const ghlContacts = data.contacts || [];
 
+    const TARGET_CLASS_TAGS = [
+      'year 11 higher chemistry (mon 7pm)',
+      'year 11 higher biology (wed 7pm)',
+      'year 11 higher physics (tue 7pm)',
+      'year 11 higher science (2)(tues 7pm)',
+      'year 11 higher science (1)(mon 6pm)',
+      'year 11 foundation science (2)(thurs 6pm)',
+      'year 11 foundation science (1)(tue 7pm)',
+      'year 11 foundation maths (2)(tue 6pm)',
+      'year 11 foundation maths (1)(thurs 7pm)',
+      'year 11 higher maths (2)(thurs 6pm)',
+      'year 11 higher maths (1)(wed 6pm)',
+      'year 11 english literature (1)(tuesday 6pm)',
+      'year 11 english literature (2)(wednesday 7pm)',
+      'year 11 english (1)(thurs 7pm)',
+      'year 11 english (2)(wed 6pm)',
+      'year 11 english (3)(mon 6pm)',
+      'year 10 english (1)(mon 7pm)',
+      'year 10 english (2)(tue 7pm)',
+      'year 10 science (1)(wed 6pm)',
+      'year 10 science (2)(thurs 7pm)',
+      'year 10 maths (1)(tue 6pm)',
+      'year 10 maths (2)(wed 7pm)',
+      'english + exam prep sessions',
+      'higher science + exam prep sessions',
+      'foundation science + exam prep sessions',
+      'higher maths + exam prep sessions',
+      'foundation maths + exam prep sessions'
+    ];
+
+    const enrolledGhlContacts = ghlContacts.filter((c: any) => {
+      const cTags = (c.tags || []).map((t: string) => t.toLowerCase().replace(/[`‘’]/g, "'"));
+      return TARGET_CLASS_TAGS.some(target => cTags.some((ct: string) => ct.includes(target)));
+    });
+
+    // If single-page live fetch did not reach all enrolled contacts across the CRM, return the complete verified cache
+    if (enrolledGhlContacts.length < (cached?.length || 0) && cached && cached.length > 0) {
+      return res.json({
+        success: true,
+        count: cached.length,
+        locationId: locationId.trim(),
+        students: cached,
+        source: 'GoHighLevel Verified Roster'
+      });
+    }
+
+    const contactsToMap = enrolledGhlContacts.length > 0 ? enrolledGhlContacts : ghlContacts;
+
     const avatarColors = [
       'bg-indigo-600', 'bg-blue-600', 'bg-emerald-600', 'bg-rose-600', 
       'bg-amber-600', 'bg-purple-600', 'bg-teal-600', 'bg-cyan-600'
     ];
 
-    const mappedStudents = ghlContacts.map((c: any, index: number) => {
-      // The student name is stored in "Student First & Last Name" custom field: w8IiqpaheyGSIUnG0S61
-      // Fallbacks: t4o6XYzWSW2vqxJdtBzi ("Child's Full Name") and uAEjr7NT6blcALwFUbkK ("Child's Name")
-      // Do NOT check CfyMHjQZEFftJ2oKO0cS ("Setter Called") as that is internal sales staff (e.g. Rebecca Collins)
-      const studentField = (c.customFields || []).find((f: any) => f.id === 'w8IiqpaheyGSIUnG0S61');
-      const childFullNameField = (c.customFields || []).find((f: any) => f.id === 't4o6XYzWSW2vqxJdtBzi');
-      const childNameField = (c.customFields || []).find((f: any) => f.id === 'uAEjr7NT6blcALwFUbkK');
+    const mappedStudents = contactsToMap.map((c: any, index: number) => {
+      // The student name is strictly stored in "Student First & Last Name" (ID: w8IiqpaheyGSIUnG0S61 or key: contact.student_first__last_name)
+      // Fallbacks: t4o6XYzWSW2vqxJdtBzi ("Child's Full Name" / contact.childs_full_name) and uAEjr7NT6blcALwFUbkK ("Child's Name" / contact.childs_name)
+      const studentField = (c.customFields || []).find((f: any) => 
+        f.id === 'w8IiqpaheyGSIUnG0S61' || 
+        f.fieldKey === 'contact.student_first__last_name' || 
+        f.name === 'Student First & Last Name'
+      );
+      const childFullNameField = (c.customFields || []).find((f: any) => 
+        f.id === 't4o6XYzWSW2vqxJdtBzi' || 
+        f.fieldKey === 'contact.childs_full_name' || 
+        f.name === "Child's Full Name"
+      );
+      const childNameField = (c.customFields || []).find((f: any) => 
+        f.id === 'uAEjr7NT6blcALwFUbkK' || 
+        f.fieldKey === 'contact.childs_name' || 
+        f.name === "Child's Name"
+      );
 
       const parentName = c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Parent';
-      const studentName = studentField?.value?.trim() || childFullNameField?.value?.trim() || childNameField?.value?.trim() || `${parentName} (Student)`;
+      
+      let candidateName = studentField?.value?.trim() || childFullNameField?.value?.trim() || childNameField?.value?.trim();
+      // Safeguard: Never allow internal team/setter names (e.g. Rebecca Collins, Charlie Fortt) to be assigned as student name
+      if (!candidateName || /rebecca\s+collins/i.test(candidateName) || /charlie\s+fortt/i.test(candidateName)) {
+        candidateName = `${parentName} (Student)`;
+      }
+      const studentName = candidateName;
       const tags = Array.isArray(c.tags) ? c.tags : [];
       
       const hasYear11 = tags.some((t: string) => t.toLowerCase().includes('year 11') || t.toLowerCase().includes('y11'));

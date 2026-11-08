@@ -113,7 +113,7 @@ export const ApiIntegrationModal: React.FC<ApiIntegrationModalProps> = ({
     await handleSaveLocation();
 
     try {
-      const res = await fetch(`/api/contacts?locationId=${encodeURIComponent(locationId.trim())}`);
+      const res = await fetch(`/api/contacts?locationId=${encodeURIComponent(locationId.trim())}&force=true`);
       const data = await res.json();
       setIsFetchingContacts(false);
 
