@@ -44,13 +44,13 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Parent Name: {{contact.first_name}}, Student Name: {{contact.childs_name}}
   const parentGreeting = recipient.parentName && recipient.parentName.trim() ? recipient.parentName.trim() : 'Parent';
-  const student = recipient.studentName || 'Student';
+  const student = recipient.studentName && recipient.studentName.trim() ? recipient.studentName.trim() : 'your child';
   const className = classContext?.className || 'GCSE Tutoring Session';
   const dateStr = classContext?.date || 'today';
-  const tutorName = classContext?.tutor || 'Your Tutor';
 
-  // Helper to build content for a specific type and template
+  // Helper to build content for a specific type and template without "Your Tutor"
   const getContentFor = (type: 'SMS' | 'Email', template: 'absence' | 'late' | 'reminder' | 'custom') => {
     if (type === 'SMS') {
       if (template === 'absence') {
@@ -66,7 +66,7 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
       } else if (template === 'reminder') {
         return {
           subject: '',
-          body: `Hi ${parentGreeting}, reminder that ${student}'s live ${className} session is scheduled for ${dateStr} with ${tutorName}. Please ensure they are ready to join. - SmartaTutoring`
+          body: `Hi ${parentGreeting}, reminder that ${student}'s live ${className} session is scheduled for ${dateStr}. Please ensure they are ready to join. - SmartaTutoring`
         };
       } else {
         return {
@@ -82,15 +82,15 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
           body: `<p>Dear ${parentGreeting},</p>
 <p>We wanted to let you know that <strong>${student}</strong> was marked absent from their scheduled <strong>${className}</strong> session on <strong>${dateStr}</strong>.</p>
 <p>Consistent attendance is vital for GCSE mastery. If ${student} was unable to attend due to illness or other commitments, please let our team know so we can supply the lesson recording and accompanying practice workbook.</p>
-<p>Best regards,<br/><strong>${tutorName} & The SmartaTutoring Team</strong></p>`
+<p>Best regards,<br/><strong>The SmartaTutoring Team</strong></p>`
         };
       } else if (template === 'late') {
         return {
           subject: `Attendance Update: ${student} - ${className}`,
           body: `<p>Dear ${parentGreeting},</p>
 <p>This is a quick update to inform you that <strong>${student}</strong> joined today's <strong>${className}</strong> session approximately ${minutesLate} minutes after the start time.</p>
-<p>The tutor is ensuring ${student} covers the core concepts, but please encourage timely arrival for upcoming classes to maximize lesson value.</p>
-<p>Best regards,<br/><strong>${tutorName} & The SmartaTutoring Team</strong></p>`
+<p>The lesson is actively covering core concepts, and we encourage timely arrival for upcoming classes to maximize lesson value.</p>
+<p>Best regards,<br/><strong>The SmartaTutoring Team</strong></p>`
         };
       } else if (template === 'reminder') {
         return {
@@ -98,14 +98,14 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
           body: `<p>Dear ${parentGreeting},</p>
 <p>This is a friendly reminder that <strong>${student}</strong> has their upcoming <strong>${className}</strong> scheduled for <strong>${dateStr}</strong>.</p>
 <p>Please make sure ${student} has their workbook ready, camera functioning, and joins on time via their Google Meet classroom link.</p>
-<p>Looking forward to a productive lesson!<br/><strong>${tutorName} & The SmartaTutoring Team</strong></p>`
+<p>Looking forward to a productive lesson!<br/><strong>The SmartaTutoring Team</strong></p>`
         };
       } else {
         return {
           subject: `GCSE Academic Update: ${student}`,
           body: `<p>Dear ${parentGreeting},</p>
 <p>We are reaching out regarding ${student}'s GCSE progress:</p>
-<p>Best regards,<br/><strong>${tutorName} & SmartaTutoring Team</strong></p>`
+<p>Best regards,<br/><strong>The SmartaTutoring Team</strong></p>`
         };
       }
     }
@@ -355,6 +355,27 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
                   HTML formatted email
                 </span>
               )}
+            </div>
+
+            {/* Quick GHL Merge Tags */}
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 pb-0.5">
+              <span className="font-medium">Insert CRM Field:</span>
+              <button
+                type="button"
+                onClick={() => setMessageText(prev => prev + ' {{contact.first_name}}')}
+                className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-mono border border-slate-200 dark:border-slate-700 transition-colors"
+                title="Inserts {{contact.first_name}} (Parent Name)"
+              >
+                + Parent: {"{{contact.first_name}}"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMessageText(prev => prev + ' {{contact.childs_name}}')}
+                className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-mono border border-slate-200 dark:border-slate-700 transition-colors"
+                title="Inserts {{contact.childs_name}} (Student Name)"
+              >
+                + Student: {"{{contact.childs_name}}"}
+              </button>
             </div>
             <textarea
               rows={messageType === 'Email' ? 6 : 4}

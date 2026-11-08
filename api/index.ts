@@ -196,26 +196,34 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
     ];
 
     const mappedStudents = enrolledContacts.map((c: any, index: number) => {
-      // Primary: "Student First & Last Name" (ID: w8IiqpaheyGSIUnG0S61)
-      const studentField = (c.customFields || []).find((f: any) => 
-        f.id === 'w8IiqpaheyGSIUnG0S61' || 
-        f.fieldKey === 'contact.student_first__last_name' || 
-        f.name === 'Student First & Last Name'
+      // 1. Student Name: prioritize {{contact.childs_name}} (ID: uAEjr7NT6blcALwFUbkK)
+      const childNameField = (c.customFields || []).find((f: any) => 
+        f.id === 'uAEjr7NT6blcALwFUbkK' || 
+        f.fieldKey === 'contact.childs_name' || 
+        f.name === "Child's Name" ||
+        /child.*name/i.test(f.fieldKey || f.name || '')
       );
+      // Fallback: Child's Full Name (ID: t4o6XYzWSW2vqxJdtBzi)
       const childFullNameField = (c.customFields || []).find((f: any) => 
         f.id === 't4o6XYzWSW2vqxJdtBzi' || 
         f.fieldKey === 'contact.childs_full_name' || 
         f.name === "Child's Full Name"
       );
-      const childNameField = (c.customFields || []).find((f: any) => 
-        f.id === 'uAEjr7NT6blcALwFUbkK' || 
-        f.fieldKey === 'contact.childs_name' || 
-        f.name === "Child's Name"
+      // Fallback: Student First & Last Name (ID: w8IiqpaheyGSIUnG0S61)
+      const studentField = (c.customFields || []).find((f: any) => 
+        f.id === 'w8IiqpaheyGSIUnG0S61' || 
+        f.fieldKey === 'contact.student_first__last_name' || 
+        f.name === 'Student First & Last Name'
       );
 
-      const parentName = c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Parent';
+      // Parent Name: {{contact.first_name}}
+      const parentFirstName = c.firstName?.trim() || '';
+      const parentFullName = [c.firstName, c.lastName].filter(Boolean).join(' ').trim() || c.contactName?.trim() || 'Parent';
+      const parentName = parentFirstName || parentFullName;
       
-      let candidateName = studentField?.value?.trim() || childFullNameField?.value?.trim() || childNameField?.value?.trim();
+      let candidateName = childNameField?.value?.trim() || 
+                           childFullNameField?.value?.trim() || 
+                           studentField?.value?.trim();
       
       // If student field isn't explicitly filled, check if contact name is suitable
       if (!candidateName) {
