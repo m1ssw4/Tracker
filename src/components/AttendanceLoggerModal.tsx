@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { LessonSession, StudentAttendanceEntry, AttendanceStatus, Student, ApiConfig } from '../types';
 import { getStudentsByTag } from '../data/mockStudents';
-import { X, Check, Clock, AlertCircle, CheckCircle2, Copy } from 'lucide-react';
+import { X, Check, Clock, AlertCircle, CheckCircle2, Copy, MessageSquare, Mail } from 'lucide-react';
+import { SendMessageModal, MessageRecipient } from './SendMessageModal';
 
 interface AttendanceLoggerModalProps {
   session: LessonSession | null;
@@ -25,6 +26,14 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
   const [entries, setEntries] = useState<StudentAttendanceEntry[]>([]);
   const [copiedTag, setCopiedTag] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Messaging modal state
+  const [messageTarget, setMessageTarget] = useState<{
+    recipient: MessageRecipient;
+    initialType: 'SMS' | 'Email';
+    initialTemplate: 'absence' | 'late' | 'reminder' | 'custom';
+    minutesLate?: number;
+  } | null>(null);
 
   // Initialize roster based on session and enrolled students
   useEffect(() => {
@@ -213,34 +222,111 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
                       )}
                     </div>
 
-                    {/* Status Button Segmented Group */}
-                    <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
-                      {(
-                        [
-                          { key: 'present', label: 'Present', activeClass: 'bg-emerald-600 text-white font-semibold' },
-                          { key: 'late', label: 'Late', activeClass: 'bg-amber-600 text-white font-semibold' },
-                          { key: 'absent', label: 'Absent', activeClass: 'bg-rose-600 text-white font-semibold' },
-                          { key: 'excused', label: 'Excused', activeClass: 'bg-slate-700 text-white font-semibold' }
-                        ] as const
-                      ).map((item) => (
+                    {/* Status Button Segmented Group & Direct Message Action */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                        {(
+                          [
+                            { key: 'present', label: 'Present', activeClass: 'bg-emerald-600 text-white font-semibold' },
+                            { key: 'late', label: 'Late', activeClass: 'bg-amber-600 text-white font-semibold' },
+                            { key: 'absent', label: 'Absent', activeClass: 'bg-rose-600 text-white font-semibold' },
+                            { key: 'excused', label: 'Excused', activeClass: 'bg-slate-700 text-white font-semibold' }
+                          ] as const
+                        ).map((item) => (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => updateStatus(entry.studentId, item.key)}
+                            className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                              entry.status === item.key
+                                ? item.activeClass
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Generic Message button */}
+                      {studentDetail && (
                         <button
-                          key={item.key}
                           type="button"
-                          onClick={() => updateStatus(entry.studentId, item.key)}
-                          className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                            entry.status === item.key
-                              ? item.activeClass
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
+                          onClick={() => setMessageTarget({
+                            recipient: {
+                              contactId: studentDetail.id,
+                              studentName: studentDetail.name,
+                              parentName: studentDetail.parentName,
+                              phone: studentDetail.parentPhone,
+                              email: studentDetail.email
+                            },
+                            initialType: 'SMS',
+                            initialTemplate: entry.status === 'absent' ? 'absence' : entry.status === 'late' ? 'late' : 'custom',
+                            minutesLate: entry.minutesLate
+                          })}
+                          title="Message Parent (SMS or Email)"
+                          className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition-colors"
                         >
-                          {item.label}
+                          <MessageSquare className="w-3.5 h-3.5" />
                         </button>
-                      ))}
+                      )}
                     </div>
                   </div>
 
+                  {/* Contextual actions for Absent / Late parents notifications */}
+                  {(entry.status === 'absent' || entry.status === 'late') && studentDetail && (
+                    <div className="mt-2.5 p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {entry.status === 'absent' ? 'Student is absent.' : `Student is ${entry.minutesLate || 10}m late.`} Notify parent ({studentDetail.parentName}):
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setMessageTarget({
+                            recipient: {
+                              contactId: studentDetail.id,
+                              studentName: studentDetail.name,
+                              parentName: studentDetail.parentName,
+                              phone: studentDetail.parentPhone,
+                              email: studentDetail.email
+                            },
+                            initialType: 'SMS',
+                            initialTemplate: entry.status === 'absent' ? 'absence' : 'late',
+                            minutesLate: entry.minutesLate
+                          })}
+                          className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-medium flex items-center gap-1 transition-colors text-[11px]"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          <span>SMS Parent</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMessageTarget({
+                            recipient: {
+                              contactId: studentDetail.id,
+                              studentName: studentDetail.name,
+                              parentName: studentDetail.parentName,
+                              phone: studentDetail.parentPhone,
+                              email: studentDetail.email
+                            },
+                            initialType: 'Email',
+                            initialTemplate: entry.status === 'absent' ? 'absence' : 'late',
+                            minutesLate: entry.minutesLate
+                          })}
+                          className="px-2.5 py-1 rounded bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-slate-700 font-medium flex items-center gap-1 transition-colors text-[11px]"
+                        >
+                          <Mail className="w-3 h-3" />
+                          <span>Email Parent</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Contextual fields for Late & Notes */}
-                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center gap-3 text-xs">
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center gap-3 text-xs">
                     {entry.status === 'late' && (
                       <div className="flex items-center gap-2 shrink-0">
                         <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
@@ -311,6 +397,25 @@ export const AttendanceLoggerModal: React.FC<AttendanceLoggerModalProps> = ({
         </div>
 
       </div>
+
+      {/* Direct Outbound Message Modal (SMS & Email via GoHighLevel) */}
+      {messageTarget && (
+        <SendMessageModal
+          isOpen={!!messageTarget}
+          onClose={() => setMessageTarget(null)}
+          recipient={messageTarget.recipient}
+          initialType={messageTarget.initialType}
+          initialTemplate={messageTarget.initialTemplate}
+          minutesLate={messageTarget.minutesLate}
+          classContext={{
+            className: session.className,
+            date: session.date,
+            time: `${session.startTime} - ${session.endTime}`,
+            tutor: session.tutor
+          }}
+        />
+      )}
     </div>
   );
 };
+

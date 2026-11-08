@@ -467,7 +467,143 @@ app.get('/api/contacts/:contactId/notes', async (req: Request, res: Response) =>
     return res.status(500).json({ success: false, error: err?.message });
   }
 });
+// Send real SMS or Email to a student / parent via GoHighLevel Conversations API
+app.post('/api/crm/send-message', async (req: Request, res: Response) => {
+  const apiKey = process.env.CRM_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
+  }
 
+  const { contactId, type, message, subject, html } = req.body;
+  if (!contactId) {
+    return res.status(400).json({ success: false, error: 'contactId is required' });
+  }
+
+  const msgType = type === 'Email' ? 'Email' : 'SMS';
+
+  if (msgType === 'SMS' && (!message || !message.trim())) {
+    return res.status(400).json({ success: false, error: 'message text is required for SMS' });
+  }
+
+  if (msgType === 'Email' && (!subject || !subject.trim())) {
+    return res.status(400).json({ success: false, error: 'subject is required for Email' });
+  }
+
+  try {
+    const payload: any = {
+      type: msgType,
+      contactId: contactId.trim()
+    };
+
+    if (msgType === 'SMS') {
+      payload.message = message.trim();
+    } else {
+      payload.subject = subject.trim();
+      payload.html = html || message || `<p>${subject}</p>`;
+    }
+
+    const ghlRes = await fetch('https://services.leadconnectorhq.com/conversations/messages', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Version': '2021-07-28',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!ghlRes.ok) {
+      const errText = await ghlRes.text();
+      return res.status(ghlRes.status).json({
+        success: false,
+        error: `GoHighLevel ${ghlRes.status}: ${errText}`
+      });
+    }
+
+    const data: any = await ghlRes.json();
+    return res.json({
+      success: true,
+      type: msgType,
+      contactId,
+      messageId: data.messageId || data.id,
+      msg: data.msg || `${msgType} sent successfully via GoHighLevel!`
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Failed to dispatch message: ${err?.message}`
+    });
+  }
+});
+
+// Send batch SMS or Email (e.g. class broadcasts, lesson reminders, absence notifications)
+app.post('/api/crm/send-batch-messages', async (req: Request, res: Response) => {
+  const apiKey = process.env.CRM_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ success: false, error: 'CRM_API_KEY not configured on server' });
+  }
+
+  const { recipients, type, message, subject, html } = req.body;
+  if (!Array.isArray(recipients) || recipients.length === 0) {
+    return res.status(400).json({ success: false, error: 'recipients array is required' });
+  }
+
+  const msgType = type === 'Email' ? 'Email' : 'SMS';
+  const results: Array<{ contactId: string; name?: string; status: 'sent' | 'failed'; error?: string }> = [];
+
+  for (const recipient of recipients) {
+    const contactId = typeof recipient === 'string' ? recipient : recipient.contactId || recipient.id;
+    const recipientName = typeof recipient === 'object' ? recipient.name : undefined;
+    if (!contactId) continue;
+
+    try {
+      const personalizedMsg = message ? message.replace(/\{name\}/gi, recipientName || 'Student') : '';
+      const payload: any = {
+        type: msgType,
+        contactId: contactId.trim()
+      };
+
+      if (msgType === 'SMS') {
+        payload.message = personalizedMsg.trim();
+      } else {
+        payload.subject = (subject || 'GCSE Tutoring Update').replace(/\{name\}/gi, recipientName || 'Student');
+        payload.html = html ? html.replace(/\{name\}/gi, recipientName || 'Student') : `<p>${personalizedMsg}</p>`;
+      }
+
+      const ghlRes = await fetch('https://services.leadconnectorhq.com/conversations/messages', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'Version': '2021-07-28',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (ghlRes.ok) {
+        results.push({ contactId, name: recipientName, status: 'sent' });
+      } else {
+        const errText = await ghlRes.text();
+        results.push({ contactId, name: recipientName, status: 'failed', error: errText.slice(0, 100) });
+      }
+    } catch (e: any) {
+      results.push({ contactId, name: recipientName, status: 'failed', error: e?.message });
+    }
+  }
+
+  const sentCount = results.filter(r => r.status === 'sent').length;
+  return res.json({
+    success: true,
+    type: msgType,
+    total: recipients.length,
+    sentCount,
+    failedCount: recipients.length - sentCount,
+    details: results,
+    msg: `Successfully delivered ${sentCount} of ${recipients.length} ${msgType} message(s) via GoHighLevel!`
+  });
+});
 // Server-side test connection ping
 app.post('/api/crm/test-ping', async (req: Request, res: Response) => {
   const apiKey = process.env.CRM_API_KEY;

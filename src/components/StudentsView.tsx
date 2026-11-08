@@ -16,8 +16,10 @@ import {
   AlertCircle,
   FileText,
   Send,
-  Loader2
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
+import { SendMessageModal, MessageRecipient } from './SendMessageModal';
 
 interface StudentsViewProps {
   students: Student[];
@@ -43,6 +45,9 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [isLoadingGhlNotes, setIsLoadingGhlNotes] = useState(false);
   const [newNoteInput, setNewNoteInput] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
+
+  // Direct SMS / Email modal state
+  const [messageTarget, setMessageTarget] = useState<MessageRecipient | null>(null);
 
   // All 27 tags for filter dropdown
   const allTags = useMemo(() => TUTORING_CLASSES.map(c => c.tag), []);
@@ -348,17 +353,32 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                 </div>
 
                 {/* Bottom Action Footer */}
-                <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 text-xs">
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 text-xs">
                   <span className="text-slate-500 dark:text-slate-400">
                     {stats.total} sessions logged · {stats.late} late · {stats.absent} absences
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedStudentForHistory(stu)}
-                    className="flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                  >
-                    <History className="w-3.5 h-3.5" /> Full Attendance Log
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setMessageTarget({
+                        contactId: stu.id,
+                        studentName: stu.name,
+                        parentName: stu.parentName,
+                        phone: stu.parentPhone,
+                        email: stu.email
+                      })}
+                      className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" /> Send SMS / Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStudentForHistory(stu)}
+                      className="flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      <History className="w-3.5 h-3.5" /> Full Attendance Log
+                    </button>
+                  </div>
                 </div>
 
               </div>
@@ -373,7 +393,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
             
             {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -387,12 +407,29 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                   Year {selectedStudentForHistory.yearGroup} · Parent: {selectedStudentForHistory.parentName} ({selectedStudentForHistory.parentPhone})
                 </p>
               </div>
-              <button
-                onClick={() => setSelectedStudentForHistory(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMessageTarget({
+                    contactId: selectedStudentForHistory.id,
+                    studentName: selectedStudentForHistory.name,
+                    parentName: selectedStudentForHistory.parentName,
+                    phone: selectedStudentForHistory.parentPhone,
+                    email: selectedStudentForHistory.email
+                  })}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Send SMS / Email</span>
+                </button>
+                <button
+                  onClick={() => setSelectedStudentForHistory(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Sub-tabs: Attendance History vs GoHighLevel CRM Notes */}
@@ -628,6 +665,17 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Direct Outbound Message Modal (SMS & Email via GoHighLevel) */}
+      {messageTarget && (
+        <SendMessageModal
+          isOpen={!!messageTarget}
+          onClose={() => setMessageTarget(null)}
+          recipient={messageTarget}
+          initialType="SMS"
+          initialTemplate="reminder"
+        />
       )}
 
     </div>
