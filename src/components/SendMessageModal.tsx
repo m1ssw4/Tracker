@@ -50,56 +50,100 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
   const dateStr = classContext?.date || 'today';
   const tutorName = classContext?.tutor || 'Your Tutor';
 
-  // Template generation
-  const applyTemplate = (type: 'SMS' | 'Email', template: 'absence' | 'late' | 'reminder' | 'custom') => {
-    setSelectedTemplate(template);
-
+  // Helper to build content for a specific type and template
+  const getContentFor = (type: 'SMS' | 'Email', template: 'absence' | 'late' | 'reminder' | 'custom') => {
     if (type === 'SMS') {
       if (template === 'absence') {
-        setMessageText(`Hi ${parentGreeting}, ${student} was marked absent from their ${className} session today (${dateStr}). Please reach out if you need recording access or catch-up materials. - SmartaTutoring`);
+        return {
+          subject: '',
+          body: `Hi ${parentGreeting}, ${student} was marked absent from their ${className} session today (${dateStr}). Please reach out if you need recording access or catch-up materials. - SmartaTutoring`
+        };
       } else if (template === 'late') {
-        setMessageText(`Hi ${parentGreeting}, ${student} arrived ${minutesLate} minutes late to their ${className} session today (${dateStr}). The lesson is now underway. - SmartaTutoring`);
+        return {
+          subject: '',
+          body: `Hi ${parentGreeting}, ${student} arrived ${minutesLate} minutes late to their ${className} session today (${dateStr}). The lesson is now underway. - SmartaTutoring`
+        };
       } else if (template === 'reminder') {
-        setMessageText(`Hi ${parentGreeting}, reminder that ${student}'s live ${className} session is scheduled for ${dateStr} with ${tutorName}. Please ensure they are ready to join. - SmartaTutoring`);
+        return {
+          subject: '',
+          body: `Hi ${parentGreeting}, reminder that ${student}'s live ${className} session is scheduled for ${dateStr} with ${tutorName}. Please ensure they are ready to join. - SmartaTutoring`
+        };
       } else {
-        setMessageText(`Hi ${parentGreeting}, update regarding ${student}'s GCSE studies at SmartaTutoring: `);
+        return {
+          subject: '',
+          body: `Hi ${parentGreeting}, update regarding ${student}'s GCSE studies at SmartaTutoring: `
+        };
       }
     } else {
       // Email templates
       if (template === 'absence') {
-        setSubject(`Lesson Absence Notice: ${student} - ${className}`);
-        setMessageText(
-`<p>Dear ${parentGreeting},</p>
+        return {
+          subject: `Lesson Absence Notice: ${student} - ${className}`,
+          body: `<p>Dear ${parentGreeting},</p>
 <p>We wanted to let you know that <strong>${student}</strong> was marked absent from their scheduled <strong>${className}</strong> session on <strong>${dateStr}</strong>.</p>
 <p>Consistent attendance is vital for GCSE mastery. If ${student} was unable to attend due to illness or other commitments, please let our team know so we can supply the lesson recording and accompanying practice workbook.</p>
 <p>Best regards,<br/><strong>${tutorName} & The SmartaTutoring Team</strong></p>`
-        );
+        };
       } else if (template === 'late') {
-        setSubject(`Attendance Update: ${student} - ${className}`);
-        setMessageText(
-`<p>Dear ${parentGreeting},</p>
+        return {
+          subject: `Attendance Update: ${student} - ${className}`,
+          body: `<p>Dear ${parentGreeting},</p>
 <p>This is a quick update to inform you that <strong>${student}</strong> joined today's <strong>${className}</strong> session approximately ${minutesLate} minutes after the start time.</p>
 <p>The tutor is ensuring ${student} covers the core concepts, but please encourage timely arrival for upcoming classes to maximize lesson value.</p>
 <p>Best regards,<br/><strong>${tutorName} & The SmartaTutoring Team</strong></p>`
-        );
+        };
       } else if (template === 'reminder') {
-        setSubject(`Upcoming Lesson Reminder: ${className}`);
-        setMessageText(
-`<p>Dear ${parentGreeting},</p>
+        return {
+          subject: `Upcoming Lesson Reminder: ${className}`,
+          body: `<p>Dear ${parentGreeting},</p>
 <p>This is a friendly reminder that <strong>${student}</strong> has their upcoming <strong>${className}</strong> scheduled for <strong>${dateStr}</strong>.</p>
 <p>Please make sure ${student} has their workbook ready, camera functioning, and joins on time via their Google Meet classroom link.</p>
 <p>Looking forward to a productive lesson!<br/><strong>${tutorName} & The SmartaTutoring Team</strong></p>`
-        );
+        };
       } else {
-        setSubject(`GCSE Academic Update: ${student}`);
-        setMessageText(`<p>Dear ${parentGreeting},</p><p>We are reaching out regarding ${student}'s GCSE progress: </p><p>Best regards,<br/>SmartaTutoring Team</p>`);
+        return {
+          subject: `GCSE Academic Update: ${student}`,
+          body: `<p>Dear ${parentGreeting},</p>
+<p>We are reaching out regarding ${student}'s GCSE progress:</p>
+<p>Best regards,<br/><strong>${tutorName} & SmartaTutoring Team</strong></p>`
+        };
       }
     }
   };
 
+  // Switch channel handler
+  const handleSwitchChannel = (newType: 'SMS' | 'Email') => {
+    setMessageType(newType);
+    const content = getContentFor(newType, selectedTemplate);
+    setMessageText(content.body);
+    if (newType === 'Email') {
+      setSubject(content.subject);
+    }
+  };
+
+  // Switch template handler
+  const handleSwitchTemplate = (newTemplate: 'absence' | 'late' | 'reminder' | 'custom') => {
+    setSelectedTemplate(newTemplate);
+    const content = getContentFor(messageType, newTemplate);
+    setMessageText(content.body);
+    if (messageType === 'Email') {
+      setSubject(content.subject);
+    }
+  };
+
+  // Sync when recipient or initialType/template opens
   useEffect(() => {
-    applyTemplate(messageType, initialTemplate);
-  }, [recipient, messageType, initialTemplate]);
+    if (recipient) {
+      setMessageType(initialType);
+      setSelectedTemplate(initialTemplate);
+      const content = getContentFor(initialType, initialTemplate);
+      setMessageText(content.body);
+      if (initialType === 'Email') {
+        setSubject(content.subject);
+      }
+      setFeedback(null);
+    }
+  }, [recipient?.contactId, initialType, initialTemplate]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +170,7 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
       if (response.ok && data.success) {
         setFeedback({
           type: 'success',
-          text: `${messageType} sent successfully to ${messageType === 'SMS' ? recipient.phone || 'parent' : recipient.email || 'parent'} via GoHighLevel!`
+          text: `${messageType} sent successfully to ${messageType === 'SMS' ? recipient.phone || 'parent phone' : recipient.email || 'parent email'} via GoHighLevel!`
         });
 
         if (onSuccess) {
@@ -158,16 +202,16 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
         
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               {messageType === 'SMS' ? <MessageSquare className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Send {messageType} via GoHighLevel
+                Send {messageType === 'SMS' ? 'SMS' : 'Email'} via GoHighLevel
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Direct dispatch through your CRM conversation thread
+                Direct dispatch through your CRM conversation thread ({messageType})
               </p>
             </div>
           </div>
@@ -182,11 +226,11 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
         {/* Modal Body */}
         <form onSubmit={handleSend} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
           
-          {/* Recipient Card */}
-          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-0.5">
+          {/* Recipient Card with Channel Toggle */}
+          <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1">
+                <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-indigo-500" />
                   {recipient.studentName}
                 </span>
@@ -195,12 +239,12 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
                 </span>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-3">
-                <span className="flex items-center gap-1 font-mono">
+                <span className={`flex items-center gap-1 font-mono ${messageType === 'SMS' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : ''}`}>
                   <Phone className="w-3 h-3 text-slate-400" />
                   {recipient.phone || 'No phone'}
                 </span>
                 <span>·</span>
-                <span className="flex items-center gap-1 font-mono">
+                <span className={`flex items-center gap-1 font-mono ${messageType === 'Email' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : ''}`}>
                   <Mail className="w-3 h-3 text-slate-400" />
                   {recipient.email || 'No email'}
                 </span>
@@ -208,28 +252,30 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
             </div>
 
             {/* Switch Channel: SMS vs Email */}
-            <div className="flex items-center p-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">
+            <div className="flex items-center p-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs">
               <button
                 type="button"
-                onClick={() => applyTemplate('SMS', selectedTemplate)}
-                className={`px-3 py-1 rounded font-medium flex items-center gap-1 transition-colors ${
+                onClick={() => handleSwitchChannel('SMS')}
+                className={`px-3 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 transition-all ${
                   messageType === 'SMS'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-500'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <MessageSquare className="w-3 h-3" /> SMS
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>SMS</span>
               </button>
               <button
                 type="button"
-                onClick={() => applyTemplate('Email', selectedTemplate)}
-                className={`px-3 py-1 rounded font-medium flex items-center gap-1 transition-colors ${
+                onClick={() => handleSwitchChannel('Email')}
+                className={`px-3 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 transition-all ${
                   messageType === 'Email'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-500'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <Mail className="w-3 h-3" /> Email
+                <Mail className="w-3.5 h-3.5" />
+                <span>Email</span>
               </button>
             </div>
           </div>
@@ -237,7 +283,8 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
           {/* Quick Template Selector */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Choose Template:
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Choose Template:</span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
@@ -249,10 +296,10 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => applyTemplate(messageType, t.id as any)}
+                  onClick={() => handleSwitchTemplate(t.id as any)}
                   className={`p-2 rounded-lg border text-left transition-all ${
                     selectedTemplate === t.id
-                      ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 font-semibold'
+                      ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 font-semibold shadow-xs'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900'
                   }`}
                 >
@@ -262,42 +309,60 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
             </div>
           </div>
 
-          {/* Email Subject Line (if Email) */}
+          {/* Email Subject Line (Only shown in Email mode) */}
           {messageType === 'Email' && (
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                Email Subject Line:
+            <div className="space-y-1.5 animate-fade-in">
+              <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Mail className="w-3 h-3 text-indigo-500" />
+                  <span>Subject Line:</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">Required for Email</span>
               </label>
               <input
                 type="text"
                 required
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. GCSE Tutoring Attendance Notice"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="e.g. Lesson Absence Notice: Student Name"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-xs"
               />
             </div>
           )}
 
-          {/* Message Content */}
-          <div className="space-y-1">
+          {/* Message Content Body */}
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between text-[11px]">
-              <label className="font-semibold text-slate-700 dark:text-slate-300">
-                {messageType === 'SMS' ? 'SMS Body:' : 'Email Body (HTML supported):'}
+              <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                {messageType === 'SMS' ? (
+                  <>
+                    <MessageSquare className="w-3 h-3 text-indigo-500" />
+                    <span>SMS Body:</span>
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-3 h-3 text-indigo-500" />
+                    <span>Email Body (HTML supported):</span>
+                  </>
+                )}
               </label>
-              {messageType === 'SMS' && (
+              {messageType === 'SMS' ? (
                 <span className="font-mono text-slate-400">
                   {messageText.length} characters ({Math.ceil(messageText.length / 160) || 1} SMS segment)
+                </span>
+              ) : (
+                <span className="text-slate-400 font-mono text-[10px]">
+                  HTML formatted email
                 </span>
               )}
             </div>
             <textarea
-              rows={5}
+              rows={messageType === 'Email' ? 6 : 4}
               required
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
-              placeholder="Enter message text..."
-              className="w-full p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans"
+              placeholder={messageType === 'SMS' ? 'Enter SMS text...' : 'Enter email body (HTML supported)...'}
+              className="w-full p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs leading-relaxed"
             />
           </div>
 
@@ -336,18 +401,18 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
 
               <button
                 type="submit"
-                disabled={isSending || !messageText.trim()}
+                disabled={isSending || !messageText.trim() || (messageType === 'Email' && !subject.trim())}
                 className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
               >
                 {isSending ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Sending via GHL...</span>
+                    <span>Sending {messageType} via GHL...</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Send {messageType} via GoHighLevel</span>
+                    {messageType === 'SMS' ? <Send className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                    <span>Send {messageType === 'SMS' ? 'SMS' : 'Email'} via GoHighLevel</span>
                   </>
                 )}
               </button>
