@@ -9,6 +9,7 @@ interface ScheduleOneToOneModalProps {
   onClose: () => void;
   onSave: (session: OneToOneSession) => void;
   editingSession?: OneToOneSession | null;
+  preselectedStudent?: Student | null;
   allStudents: Student[];
   initialTutor?: string;
   initialDate?: string;
@@ -32,6 +33,7 @@ export const ScheduleOneToOneModal: React.FC<ScheduleOneToOneModalProps> = ({
   onClose,
   onSave,
   editingSession,
+  preselectedStudent,
   allStudents,
   initialTutor,
   initialDate
@@ -44,9 +46,9 @@ export const ScheduleOneToOneModal: React.FC<ScheduleOneToOneModalProps> = ({
 
   const defaultStudent = editingSession 
     ? eligibleStudents.find(s => s.id === editingSession.studentId) || eligibleStudents[0]
-    : eligibleStudents[0];
+    : preselectedStudent || eligibleStudents[0];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = '2026-11-09';
 
   const [studentId, setStudentId] = useState(editingSession?.studentId || defaultStudent?.id || '');
   const [tutor, setTutor] = useState(editingSession?.tutor || initialTutor || TUTOR_ROSTER[0]);
@@ -75,10 +77,13 @@ export const ScheduleOneToOneModal: React.FC<ScheduleOneToOneModalProps> = ({
       setNotes(editingSession.notes || '');
       setStatus(editingSession.status);
     } else {
+      if (preselectedStudent) {
+        setStudentId(preselectedStudent.id);
+      }
       if (initialTutor && initialTutor !== 'All') setTutor(initialTutor);
       if (initialDate && initialDate !== 'All') setDate(initialDate);
     }
-  }, [editingSession, initialTutor, initialDate]);
+  }, [editingSession, preselectedStudent, initialTutor, initialDate]);
 
   const selectedStudent = allStudents.find(s => s.id === studentId) || defaultStudent;
 
@@ -105,9 +110,7 @@ export const ScheduleOneToOneModal: React.FC<ScheduleOneToOneModalProps> = ({
     const d = new Date(date + 'T00:00:00Z');
     const dayOfWeek = DAY_NAMES[d.getUTCDay()] || 'Monday';
 
-    const studentTag = selectedStudent 
-      ? getStudentOneToOneTag(selectedStudent) 
-      : "'26-'27 1:1 student";
+    const studentTag = (selectedStudent ? getStudentOneToOneTag(selectedStudent) : '') || "'26-'27 1:1 student";
 
     const sessionPayload: OneToOneSession = {
       id: editingSession?.id || `121-${studentId}-${date}-${Date.now().toString(36)}`,

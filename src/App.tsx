@@ -404,7 +404,8 @@ export default function App() {
   // 1:1 Session Handlers
   const handleAddOneToOneSession = (newSession: OneToOneSession) => {
     setOneToOneSessions(prev => {
-      const next = [newSession, ...prev];
+      const filtered = prev.filter(s => s.id !== newSession.id);
+      const next = [newSession, ...filtered];
       saveOneToOneSessions(next);
       return next;
     });
@@ -413,7 +414,10 @@ export default function App() {
 
   const handleUpdateOneToOneSession = (updatedSession: OneToOneSession) => {
     setOneToOneSessions(prev => {
-      const next = prev.map(s => s.id === updatedSession.id ? updatedSession : s);
+      const exists = prev.some(s => s.id === updatedSession.id);
+      const next = exists
+        ? prev.map(s => s.id === updatedSession.id ? updatedSession : s)
+        : [updatedSession, ...prev];
       saveOneToOneSessions(next);
       return next;
     });

@@ -60,6 +60,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
   // Modals state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<OneToOneSession | null>(null);
+  const [preselectedStudent, setPreselectedStudent] = useState<Student | null>(null);
   const [messageTarget, setMessageTarget] = useState<{
     recipient: MessageRecipient;
     sessionContext: { className: string; date: string; time?: string; tutor?: string };
@@ -96,7 +97,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
       // Tag filter
       if (selectedTagFilter !== 'All') {
         const cleanFilter = selectedTagFilter.toLowerCase().replace(/[`‘’']/g, "'").trim();
-        const cleanTag = session.studentTag.toLowerCase().replace(/[`‘’]/g, "'").trim();
+        const cleanTag = (session.studentTag || '').toLowerCase().replace(/[`‘’']/g, "'").trim();
         if (cleanTag !== cleanFilter && !cleanTag.includes(cleanFilter)) {
           return false;
         }
@@ -110,11 +111,11 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
       // Search query
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase();
-        const matchesStudent = session.studentName.toLowerCase().includes(q);
-        const matchesTutor = session.tutor.toLowerCase().includes(q);
+        const matchesStudent = (session.studentName || '').toLowerCase().includes(q);
+        const matchesTutor = (session.tutor || '').toLowerCase().includes(q);
         const matchesTopic = (session.topic || '').toLowerCase().includes(q);
-        const matchesSubject = session.subject.toLowerCase().includes(q);
-        const matchesTag = session.studentTag.toLowerCase().includes(q);
+        const matchesSubject = (session.subject || '').toLowerCase().includes(q);
+        const matchesTag = (session.studentTag || '').toLowerCase().includes(q);
         if (!matchesStudent && !matchesTutor && !matchesTopic && !matchesSubject && !matchesTag) {
           return false;
         }
@@ -210,6 +211,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
               type="button"
               onClick={() => {
                 setEditingSession(null);
+                setPreselectedStudent(null);
                 setIsScheduleModalOpen(true);
               }}
               className="w-full sm:w-auto min-h-[42px] px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors flex items-center justify-center gap-2"
@@ -390,18 +392,19 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
               ))}
             </div>
 
-            {(selectedTutor !== 'All' || selectedDate || selectedTagFilter !== 'All' || searchQuery) && (
+            {(selectedTutor !== 'All' || selectedDate || selectedTagFilter !== 'All' || statusFilter !== 'All' || searchQuery) && (
               <button
                 type="button"
                 onClick={() => {
                   setSelectedTutor('All');
                   setSelectedDate('');
                   setSelectedTagFilter('All');
+                  setStatusFilter('All');
                   setSearchQuery('');
                 }}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline px-2 py-1 shrink-0"
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline px-2 py-1 shrink-0 font-medium"
               >
-                Reset
+                Reset Filters
               </button>
             )}
           </div>
@@ -427,6 +430,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
               type="button"
               onClick={() => {
                 setEditingSession(null);
+                setPreselectedStudent(null);
                 setIsScheduleModalOpen(true);
               }}
               className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium text-xs shadow-xs"
@@ -491,22 +495,40 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-500">
                     <p className="font-semibold text-slate-800 dark:text-slate-200">No 1:1 sessions found</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {selectedTutor !== 'All' || selectedDate
-                        ? 'Try clearing the selected tutor or date filter, or click below to schedule one.'
+                    <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                      {selectedTutor !== 'All' || selectedDate || selectedTagFilter !== 'All' || statusFilter !== 'All' || searchQuery
+                        ? 'Try clearing active filters (Tutor, Date, Cohort, or Status) to view all scheduled sessions.'
                         : 'No 1:1 sessions have been scheduled yet.'}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingSession(null);
-                        setIsScheduleModalOpen(true);
-                      }}
-                      className="mt-3 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 hover:bg-indigo-700"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Schedule 1:1 for this selection</span>
-                    </button>
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-3.5">
+                      {(selectedTutor !== 'All' || selectedDate || selectedTagFilter !== 'All' || statusFilter !== 'All' || searchQuery) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTutor('All');
+                            setSelectedDate('');
+                            setSelectedTagFilter('All');
+                            setStatusFilter('All');
+                            setSearchQuery('');
+                          }}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          View All Sessions ({sessions.length})
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingSession(null);
+                          setPreselectedStudent(null);
+                          setIsScheduleModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 hover:bg-indigo-700 transition-colors shadow-xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Schedule 1:1 Session</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -795,24 +817,8 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setEditingSession({
-                        id: `121-${student.id}-${Date.now().toString(36)}`,
-                        studentId: student.id,
-                        studentName: student.name,
-                        parentName: student.parentName,
-                        parentPhone: student.parentPhone,
-                        parentEmail: student.parentEmail || student.email,
-                        studentTag: primaryTag,
-                        date: selectedDate || todayStr,
-                        startTime: '16:30',
-                        endTime: '17:30',
-                        tutor: selectedTutor !== 'All' ? selectedTutor : TUTOR_ROSTER[0],
-                        subject: 'Chemistry',
-                        topic: '1:1 GCSE Intensive Mastery',
-                        status: 'scheduled',
-                        attendanceStatus: 'present',
-                        isAttendanceSubmitted: false
-                      });
+                      setEditingSession(null);
+                      setPreselectedStudent(student);
                       setIsScheduleModalOpen(true);
                     }}
                     className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-[11px] shadow-xs flex items-center gap-1"
@@ -834,15 +840,45 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
           onClose={() => {
             setIsScheduleModalOpen(false);
             setEditingSession(null);
+            setPreselectedStudent(null);
           }}
           onSave={(newOrUpdated) => {
-            if (editingSession) {
+            const isExisting = sessions.some(s => s.id === newOrUpdated.id);
+            if (isExisting) {
               onUpdateSession(newOrUpdated);
             } else {
               onAddSession(newOrUpdated);
             }
+
+            // Automatically adjust filters so the user immediately sees the session in the table:
+            if (selectedTutor !== 'All' && selectedTutor !== newOrUpdated.tutor) {
+              setSelectedTutor('All');
+            }
+            if (selectedDate && selectedDate !== newOrUpdated.date) {
+              setSelectedDate('');
+            }
+            setStatusFilter('All');
+            if (selectedTagFilter !== 'All') {
+              const cleanFilter = selectedTagFilter.toLowerCase().replace(/[`‘’']/g, "'").trim();
+              const cleanTag = (newOrUpdated.studentTag || '').toLowerCase().replace(/[`‘’]/g, "'").trim();
+              if (!cleanTag.includes(cleanFilter) && !cleanFilter.includes(cleanTag)) {
+                setSelectedTagFilter('All');
+              }
+            }
+            if (searchQuery.trim().length > 0) {
+              const q = searchQuery.toLowerCase();
+              const matches = 
+                (newOrUpdated.studentName || '').toLowerCase().includes(q) ||
+                (newOrUpdated.tutor || '').toLowerCase().includes(q) ||
+                (newOrUpdated.topic || '').toLowerCase().includes(q) ||
+                (newOrUpdated.subject || '').toLowerCase().includes(q);
+              if (!matches) {
+                setSearchQuery('');
+              }
+            }
           }}
           editingSession={editingSession}
+          preselectedStudent={preselectedStudent}
           allStudents={allStudents}
           initialTutor={selectedTutor !== 'All' ? selectedTutor : undefined}
           initialDate={selectedDate || undefined}
