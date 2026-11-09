@@ -114,7 +114,8 @@
       "existing member",
       "customer replied",
       "first login",
-      "'26-'27 homework reminder"
+      "'26-'27 homework reminder",
+      "replied working hours"
     ],
     "targetGrades": {
       "GCSE": "Target 8-9"
@@ -675,14 +676,15 @@
       "'26-'27 group student",
       "homework",
       "'26-'27 year 11 higher maths (2)(thurs 6pm)",
-      "'26-'27 year 11 english (3)(mon 6pm)",
       "'26-'27 purchased smarta revision program",
       "existing member",
       "first login",
-      "'26-'27 english + exam prep sessions",
       "'26-'27 higher maths + exam prep sessions",
       "'26-'27 homework reminder",
-      "bounced email"
+      "bounced email",
+      "'26-'27 year 11 higher chemistry (mon 7pm)",
+      "'26-'27 higher science + exam prep sessions",
+      "replied working hours"
     ],
     "targetGrades": {
       "GCSE": "Target 8-9"
@@ -903,6 +905,7 @@
       "appt done",
       "showed appt `26-`27",
       "2026",
+      "'26-'27 1:1 student",
       "'26-'27 1:1 client",
       "won '26-'27",
       "purchased smarta revision program",
@@ -1237,28 +1240,6 @@
     "notes": "GoHighLevel Contact (NAGHgUighvs8vORp2NK9)"
   },
   {
-    "id": "HEsI2Ev1dwIrFsHINqFj",
-    "name": "123",
-    "email": "waduhek.sr@gmail.com",
-    "parentName": "scott",
-    "parentPhone": "+639912222222",
-    "parentEmail": "waduhek.sr@gmail.com",
-    "yearGroup": 11,
-    "tags": [
-      "replied yes",
-      "first login",
-      "appt done `26-`27",
-      "send access - year 11",
-      "existing member",
-      "'26-'27 year 11 foundation maths (2)(tue 6pm)"
-    ],
-    "targetGrades": {
-      "GCSE": "Target 8-9"
-    },
-    "avatarColor": "bg-teal-600",
-    "notes": "GoHighLevel Contact (HEsI2Ev1dwIrFsHINqFj)"
-  },
-  {
     "id": "XvR1M3oiYwbjb6zBgBED",
     "name": "Ben Roffey",
     "email": "tonggoku@yahoo.com",
@@ -1293,7 +1274,7 @@
     "targetGrades": {
       "GCSE": "Target 7-8"
     },
-    "avatarColor": "bg-cyan-600",
+    "avatarColor": "bg-teal-600",
     "notes": "GoHighLevel Contact (XvR1M3oiYwbjb6zBgBED)"
   },
   {
@@ -1339,7 +1320,7 @@
     "targetGrades": {
       "GCSE": "Target 8-9"
     },
-    "avatarColor": "bg-indigo-600",
+    "avatarColor": "bg-cyan-600",
     "notes": "GoHighLevel Contact (6zEdlo8ZF3UJwloxVsL7)"
   },
   {
@@ -1373,7 +1354,7 @@
     "targetGrades": {
       "GCSE": "Target 7-8"
     },
-    "avatarColor": "bg-blue-600",
+    "avatarColor": "bg-indigo-600",
     "notes": "GoHighLevel Contact (FnB2Cjsv5kdI1ANT6iw5)"
   }
 ]

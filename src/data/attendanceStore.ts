@@ -1,10 +1,11 @@
-import { LessonSession, StudentAttendanceEntry, ApiConfig, Student } from '../types';
+import { LessonSession, StudentAttendanceEntry, ApiConfig, Student, OneToOneSession } from '../types';
 import { TUTORING_CLASSES } from './classesData';
 import { INITIAL_STUDENTS, getStudentsByTag } from './mockStudents';
 
 const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v8';
 const STORAGE_KEY_API_CONFIG = 'tutortrack_api_config_2627_v1';
 const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v8';
+const STORAGE_KEY_ONE_TO_ONE = 'tutortrack_one_to_one_sessions_2627_v2';
 
 // Map day of week to date offset relative to Monday 2026-11-02 (Past week) and Monday 2026-11-09 (Current/Upcoming week)
 const DAY_OFFSETS: Record<string, number> = {
@@ -227,5 +228,198 @@ export function saveApiConfig(config: ApiConfig): void {
     localStorage.setItem(STORAGE_KEY_API_CONFIG, JSON.stringify(config));
   } catch (e) {
     console.error('Failed to save API config', e);
+  }
+}
+
+// ----------------------------------------------------
+// 1:1 SESSIONS MANAGEMENT & PERSISTENCE
+// ----------------------------------------------------
+
+export const TUTOR_ROSTER = [
+  'Richard "Rich" Handley',
+  'Jake Sewell',
+  'Ellie Wright',
+  'Edwin Munoz',
+  'Kelly Barraclough-Dunn',
+  'Toni Mann',
+  'Gemma Louise Koksal'
+] as const;
+
+export function generateInitialOneToOneSessions(): OneToOneSession[] {
+  return [
+    {
+      id: '121-hailey-mon-1',
+      studentId: 'xTmiNJ49FpZcR66TKG2l',
+      studentName: 'Hailey',
+      parentName: 'faith',
+      parentPhone: '+447472882222',
+      parentEmail: 'fthkhumalo@yahoo.co.uk',
+      studentTag: "'26-'27 1:1 student",
+      date: '2026-11-09',
+      dayOfWeek: 'Monday',
+      startTime: '16:30',
+      endTime: '17:30',
+      tutor: 'Richard "Rich" Handley',
+      subject: 'Chemistry',
+      topic: 'GCSE Quantitative Calculations & Moles',
+      meetingLink: 'https://meet.google.com/smarta-1on1-chem',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Focus on titration formulas and exam question drills.'
+    },
+    {
+      id: '121-charlie-mon-1',
+      studentId: 'JI4ANEmMpLvynyA7j4jS',
+      studentName: 'Charlie',
+      parentName: 'clancy',
+      parentPhone: '+447548437821',
+      parentEmail: 'clancymarschner@gmail.com',
+      studentTag: "’25’26 1:1 client",
+      date: '2026-11-09',
+      dayOfWeek: 'Monday',
+      startTime: '17:45',
+      endTime: '18:45',
+      tutor: 'Jake Sewell',
+      subject: 'Maths',
+      topic: 'Higher Tier Algebraic Proofs & Circle Theorems',
+      meetingLink: 'https://meet.google.com/smarta-1on1-maths',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Preparing for November mock assessments.'
+    },
+    {
+      id: '121-ethan-tue-1',
+      studentId: 'K9U0vKpCdpPCbrHqNVL1',
+      studentName: 'Ethan Reed',
+      parentName: 'victoria',
+      parentPhone: '+447817361605',
+      parentEmail: 'vickireed@btinternet.com',
+      studentTag: "’25’26 1:1 client",
+      date: '2026-11-10',
+      dayOfWeek: 'Tuesday',
+      startTime: '16:00',
+      endTime: '17:00',
+      tutor: 'Edwin Munoz',
+      subject: 'Science',
+      topic: 'Cell Biology & Active Transport',
+      meetingLink: 'https://meet.google.com/smarta-1on1-sci',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Reinforce required practical methodology.'
+    },
+    {
+      id: '121-shay-wed-1',
+      studentId: 'FnB2Cjsv5kdI1ANT6iw5',
+      studentName: 'Shay',
+      parentName: 'tejal',
+      parentPhone: '+447961186946',
+      parentEmail: 'patelt185@gmail.com',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-11',
+      dayOfWeek: 'Wednesday',
+      startTime: '17:00',
+      endTime: '18:00',
+      tutor: 'Ellie Wright',
+      subject: 'Physics',
+      topic: 'Wave Speed Calculations & Refraction',
+      meetingLink: 'https://meet.google.com/smarta-1on1-phys',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Exam technique on 6-mark response structure.'
+    },
+    // Past completed sessions
+    {
+      id: '121-hailey-past-1',
+      studentId: 'xTmiNJ49FpZcR66TKG2l',
+      studentName: 'Hailey',
+      parentName: 'faith',
+      parentPhone: '+447472882222',
+      parentEmail: 'fthkhumalo@yahoo.co.uk',
+      studentTag: "'26-'27 1:1 student",
+      date: '2026-11-02',
+      dayOfWeek: 'Monday',
+      startTime: '16:30',
+      endTime: '17:30',
+      tutor: 'Richard "Rich" Handley',
+      subject: 'Chemistry',
+      topic: 'Periodic Table Trends & Transition Metals',
+      meetingLink: 'https://meet.google.com/smarta-1on1-chem',
+      status: 'completed',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: true,
+      notes: 'Excellent participation. Completed all mole calculation worksheet problems accurately.'
+    },
+    {
+      id: '121-charlie-past-1',
+      studentId: 'JI4ANEmMpLvynyA7j4jS',
+      studentName: 'Charlie',
+      parentName: 'clancy',
+      parentPhone: '+447548437821',
+      parentEmail: 'clancymarschner@gmail.com',
+      studentTag: "’25’26 1:1 client",
+      date: '2026-11-03',
+      dayOfWeek: 'Tuesday',
+      startTime: '17:45',
+      endTime: '18:45',
+      tutor: 'Jake Sewell',
+      subject: 'Maths',
+      topic: 'Quadratic Equations & Completing the Square',
+      meetingLink: 'https://meet.google.com/smarta-1on1-maths',
+      status: 'completed',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: true,
+      notes: 'Mastered completing the square method. Advancing to quadratic formula proofs.'
+    },
+    {
+      id: '121-ethan-past-1',
+      studentId: 'K9U0vKpCdpPCbrHqNVL1',
+      studentName: 'Ethan Reed',
+      parentName: 'victoria',
+      parentPhone: '+447817361605',
+      parentEmail: 'vickireed@btinternet.com',
+      studentTag: "’25’26 1:1 client",
+      date: '2026-11-04',
+      dayOfWeek: 'Wednesday',
+      startTime: '16:00',
+      endTime: '17:00',
+      tutor: 'Edwin Munoz',
+      subject: 'Science',
+      topic: 'Photosynthesis Rate & Limiting Factors',
+      meetingLink: 'https://meet.google.com/smarta-1on1-sci',
+      status: 'completed',
+      attendanceStatus: 'late',
+      minutesLate: 10,
+      isAttendanceSubmitted: true,
+      notes: 'Arrived 10 mins late due to school travel delay. Caught up quickly on graph interpretation.'
+    }
+  ];
+}
+
+export function loadSavedOneToOneSessions(): OneToOneSession[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ONE_TO_ONE);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to parse saved 1:1 sessions', e);
+  }
+  const initial = generateInitialOneToOneSessions();
+  saveOneToOneSessions(initial);
+  return initial;
+}
+
+export function saveOneToOneSessions(sessions: OneToOneSession[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_ONE_TO_ONE, JSON.stringify(sessions));
+  } catch (e) {
+    console.error('Failed to save 1:1 sessions', e);
   }
 }

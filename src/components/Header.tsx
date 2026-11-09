@@ -2,7 +2,7 @@ import React from 'react';
 import { Key, Moon, Sun, ShieldCheck, ShieldAlert, RefreshCw, Lock, LockOpen } from 'lucide-react';
 import { ApiConfig } from '../types';
 
-export type ActiveTab = 'schedules' | 'attendance' | 'classes' | 'students' | 'reports';
+export type ActiveTab = 'schedules' | 'one-to-one' | 'attendance' | 'classes' | 'students' | 'reports';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -32,7 +32,8 @@ export const Header: React.FC<HeaderProps> = ({
   const isApiConnected = apiConfig.status === 'connected' || apiConfig.apiKey.trim().length > 0;
 
   const navItems: { id: ActiveTab; label: string }[] = [
-    { id: 'schedules', label: 'Schedules' },
+    { id: 'schedules', label: 'Group Classes' },
+    { id: 'one-to-one', label: '1:1 Tutoring' },
     { id: 'attendance', label: 'Attendance' },
     { id: 'classes', label: 'Classes & Tags' },
     { id: 'students', label: 'Students' },

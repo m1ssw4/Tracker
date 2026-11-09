@@ -3,7 +3,8 @@ import {
   LessonSession, 
   Student, 
   ApiConfig, 
-  StudentAttendanceEntry 
+  StudentAttendanceEntry,
+  OneToOneSession
 } from './types';
 import { 
   loadSavedSessions, 
@@ -11,11 +12,14 @@ import {
   loadSavedStudents, 
   saveStudents, 
   loadApiConfig, 
-  saveApiConfig 
+  saveApiConfig,
+  loadSavedOneToOneSessions,
+  saveOneToOneSessions
 } from './data/attendanceStore';
 import { normalizeTag } from './data/classesData';
 import { Header, ActiveTab } from './components/Header';
 import { ScheduleView } from './components/ScheduleView';
+import { OneToOneView } from './components/OneToOneView';
 import { AttendanceView } from './components/AttendanceView';
 import { ClassesTagsView } from './components/ClassesTagsView';
 import { StudentsView } from './components/StudentsView';
@@ -28,6 +32,7 @@ import { CheckCircle2, ShieldCheck, X } from 'lucide-react';
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('schedules');
   const [sessions, setSessions] = useState<LessonSession[]>(() => loadSavedSessions());
+  const [oneToOneSessions, setOneToOneSessions] = useState<OneToOneSession[]>(() => loadSavedOneToOneSessions());
   const [students, setStudents] = useState<Student[]>(() => loadSavedStudents());
   const [apiConfig, setApiConfig] = useState<ApiConfig>(() => loadApiConfig());
   const [isSyncingCrm, setIsSyncingCrm] = useState<boolean>(false);
@@ -396,6 +401,46 @@ export default function App() {
     showToast(newConfig.apiKey ? 'API credentials active. Ready for live sync.' : 'Configuration saved in local storage mode.');
   };
 
+  // 1:1 Session Handlers
+  const handleAddOneToOneSession = (newSession: OneToOneSession) => {
+    setOneToOneSessions(prev => {
+      const next = [newSession, ...prev];
+      saveOneToOneSessions(next);
+      return next;
+    });
+    showToast(`Scheduled 1:1 session for ${newSession.studentName} with ${newSession.tutor}!`);
+  };
+
+  const handleUpdateOneToOneSession = (updatedSession: OneToOneSession) => {
+    setOneToOneSessions(prev => {
+      const next = prev.map(s => s.id === updatedSession.id ? updatedSession : s);
+      saveOneToOneSessions(next);
+      return next;
+    });
+    showToast(`Updated 1:1 session for ${updatedSession.studentName}!`);
+  };
+
+  const handleDeleteOneToOneSession = (sessionId: string) => {
+    setOneToOneSessions(prev => {
+      const next = prev.filter(s => s.id !== sessionId);
+      saveOneToOneSessions(next);
+      return next;
+    });
+    showToast(`Removed 1:1 session.`);
+  };
+
+  const handleOneToOneLogNote = async (studentId: string, noteText: string) => {
+    try {
+      await fetch(`/api/contacts/${encodeURIComponent(studentId)}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: noteText })
+      });
+    } catch (err) {
+      console.warn('Could not post attendance note to GHL', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
       
@@ -438,6 +483,18 @@ export default function App() {
             sessions={sessions}
             onOpenAttendance={handleOpenAttendanceModal}
             allStudents={students}
+          />
+        )}
+
+        {activeTab === 'one-to-one' && (
+          <OneToOneView
+            sessions={oneToOneSessions}
+            onAddSession={handleAddOneToOneSession}
+            onUpdateSession={handleUpdateOneToOneSession}
+            onDeleteSession={handleDeleteOneToOneSession}
+            allStudents={students}
+            onLogAttendanceNote={handleOneToOneLogNote}
+            isAdminUnlocked={isAdminUnlocked}
           />
         )}
 

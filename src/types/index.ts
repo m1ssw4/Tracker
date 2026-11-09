@@ -88,3 +88,26 @@ export interface ApiConfig {
   lastSynced: string | null;
   status: 'connected' | 'disconnected' | 'pending_key';
 }
+
+export interface OneToOneSession {
+  id: string;
+  studentId: string;
+  studentName: string;
+  parentName?: string;
+  parentPhone?: string;
+  parentEmail?: string;
+  studentTag: string; // "'26-'27 1:1 student" | "’25’26 1:1 client" | etc.
+  date: string; // YYYY-MM-DD
+  dayOfWeek?: DayOfWeek;
+  startTime: string; // "16:00"
+  endTime: string; // "17:00"
+  tutor: string;
+  subject: string;
+  topic?: string;
+  meetingLink?: string;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  attendanceStatus?: AttendanceStatus; // 'present' | 'late' | 'absent' | 'excused'
+  minutesLate?: number;
+  notes?: string;
+  isAttendanceSubmitted?: boolean;
+}
