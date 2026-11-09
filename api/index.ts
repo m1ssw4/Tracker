@@ -187,16 +187,20 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
     });
 
     const normalizeTagStr = (t: string) => t.toLowerCase().replace(/[`‘’]/g, "'").trim();
-    const isOneToOne = (cTags: string[]) => cTags.some(ct => 
-      ct.includes('1:1') || ct.includes('1-1') || ct.includes('121')
-    );
 
-    // Filter contacts with active class enrollments OR 1:1 client tags
+    // Filter strictly for students active for '26-'27 OR returnees who availed again for '26-'27
     const enrolledContacts = Array.from(allContactsMap.values()).filter((c: any) => {
       const cTags = (c.tags || []).map((t: string) => normalizeTagStr(t));
-      const hasGroup = TARGET_CLASS_TAGS.some(target => cTags.some((ct: string) => ct.includes(target)));
-      const hasOneToOne = isOneToOne(cTags);
-      return hasGroup || hasOneToOne;
+      
+      const hasWon2627 = cTags.some((t: string) => t.includes("won '26-'27") || t.includes("won `26-`27") || (t.includes('won') && t.includes('26') && t.includes('27')));
+      const has2627_121 = cTags.some((t: string) => t.includes("'26-'27 1:1 client") || t.includes("'26-'27 1:1 student"));
+      const has2627_Group = cTags.some((t: string) => t.includes("'26-'27 group") || t.includes("'26-'27 year") || t.includes("'26-'27"));
+
+      const isOffboarded = cTags.some((t: string) => t === 'offboarded');
+      if (isOffboarded && !hasWon2627) return false;
+
+      // Must be active for 26-27 or a returnee who availed for 26-27
+      return hasWon2627 || has2627_121 || has2627_Group;
     });
 
     const avatarColors = [

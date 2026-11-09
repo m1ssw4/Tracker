@@ -2,10 +2,10 @@ import { LessonSession, StudentAttendanceEntry, ApiConfig, Student, OneToOneSess
 import { TUTORING_CLASSES } from './classesData';
 import { INITIAL_STUDENTS, getStudentsByTag } from './mockStudents';
 
-const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v9';
+const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v10';
 const STORAGE_KEY_API_CONFIG = 'tutortrack_api_config_2627_v1';
-const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v9';
-const STORAGE_KEY_ONE_TO_ONE = 'tutortrack_one_to_one_sessions_2627_v3';
+const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v10';
+const STORAGE_KEY_ONE_TO_ONE = 'tutortrack_one_to_one_sessions_2627_v4';
 
 // Map day of week to date offset relative to Monday 2026-11-02 (Past week) and Monday 2026-11-09 (Current/Upcoming week)
 const DAY_OFFSETS: Record<string, number> = {
@@ -176,7 +176,7 @@ export function saveSessions(sessions: LessonSession[]): void {
 
 export function loadSavedStudents(): Student[] {
   try {
-    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4', 'tutortrack_students_2627_ghl_v5', 'tutortrack_students_2627_ghl_v6', 'tutortrack_students_2627_ghl_v7', 'tutortrack_students_2627_ghl_v8'].forEach(k => {
+    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4', 'tutortrack_students_2627_ghl_v5', 'tutortrack_students_2627_ghl_v6', 'tutortrack_students_2627_ghl_v7', 'tutortrack_students_2627_ghl_v8', 'tutortrack_students_2627_ghl_v9'].forEach(k => {
       try { localStorage.removeItem(k); } catch (_) {}
     });
 
@@ -549,7 +549,7 @@ export function generateInitialOneToOneSessions(): OneToOneSession[] {
 
 export function loadSavedOneToOneSessions(): OneToOneSession[] {
   try {
-    ['tutortrack_one_to_one_sessions_2627_v1', 'tutortrack_one_to_one_sessions_2627_v2'].forEach(k => {
+    ['tutortrack_one_to_one_sessions_2627_v1', 'tutortrack_one_to_one_sessions_2627_v2', 'tutortrack_one_to_one_sessions_2627_v3'].forEach(k => {
       try { localStorage.removeItem(k); } catch (_) {}
     });
 
