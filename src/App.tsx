@@ -17,6 +17,7 @@ import {
   saveOneToOneSessions
 } from './data/attendanceStore';
 import { normalizeTag } from './data/classesData';
+import { isOneToOneStudent } from './data/mockStudents';
 import { Header, ActiveTab } from './components/Header';
 import { ScheduleView } from './components/ScheduleView';
 import { OneToOneView } from './components/OneToOneView';
@@ -81,6 +82,24 @@ export default function App() {
       localStorage.setItem('tutortrack_theme', 'light');
     }
   }, [isDark]);
+
+  // Synchronize 1:1 sessions whenever student roster updates:
+  // Automatically purge scheduled sessions for any student whose 1:1 tag was deleted
+  useEffect(() => {
+    if (students.length === 0) return;
+    setOneToOneSessions(prev => {
+      const next = prev.filter(s => {
+        const student = students.find(st => st.id === s.studentId);
+        // Retain session only if student is found and currently has an active 1:1 tag
+        return student ? isOneToOneStudent(student) : false;
+      });
+      if (next.length !== prev.length) {
+        saveOneToOneSessions(next);
+        return next;
+      }
+      return prev;
+    });
+  }, [students]);
 
   const [hasLocationId, setHasLocationId] = useState(true);
 
@@ -232,11 +251,35 @@ export default function App() {
     if (!isSilent) {
       showToast(`Synchronized ${crmStudents.length} real students from GoHighLevel CRM!`);
     }
+
+    // Reconcile 1:1 sessions: remove sessions for students who no longer hold a 1:1 tag in CRM
+    setOneToOneSessions(prev => {
+      const next = prev.filter(s => {
+        const student = crmStudents.find(st => st.id === s.studentId);
+        return student ? isOneToOneStudent(student) : false;
+      });
+      if (next.length !== prev.length) {
+        saveOneToOneSessions(next);
+      }
+      return next;
+    });
   };
 
   const handleUpdateStudents = async (updated: Student[], updatedStudentId?: string, actionNote?: string) => {
     setStudents(updated);
     saveStudents(updated);
+
+    // Reconcile 1:1 sessions: remove sessions for students whose 1:1 tags were removed
+    setOneToOneSessions(prev => {
+      const next = prev.filter(s => {
+        const student = updated.find(st => st.id === s.studentId);
+        return student ? isOneToOneStudent(student) : false;
+      });
+      if (next.length !== prev.length) {
+        saveOneToOneSessions(next);
+      }
+      return next;
+    });
 
     if (updatedStudentId) {
       const student = updated.find(s => s.id === updatedStudentId);
@@ -297,6 +340,15 @@ export default function App() {
       saveSessions(updated);
       return updated;
     });
+
+    // Unenroll from 1:1 sessions immediately if student no longer has an active 1:1 tag
+    if (!isOneToOneStudent(updatedStudent)) {
+      setOneToOneSessions(prev => {
+        const next = prev.filter(s => s.studentId !== studentId);
+        saveOneToOneSessions(next);
+        return next;
+      });
+    }
 
     try {
       const res = await fetch(`/api/contacts/${encodeURIComponent(studentId)}/tags`, {

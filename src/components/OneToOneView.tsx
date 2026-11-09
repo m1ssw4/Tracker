@@ -81,9 +81,18 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
     return allStudents.filter(is2627OneToOneStudent);
   }, [allStudents]);
 
+  // Active 1:1 sessions strictly verified against the current CRM student directory
+  // If a student's 1:1 tag was deleted, their sessions are excluded from the active sessions table
+  const activeOneToOneSessions = useMemo(() => {
+    return sessions.filter(session => {
+      const student = allStudents.find(s => s.id === session.studentId);
+      return student ? isOneToOneStudent(student) : false;
+    });
+  }, [sessions, allStudents]);
+
   // Filtered 1:1 sessions
   const filteredSessions = useMemo(() => {
-    return sessions.filter(session => {
+    return activeOneToOneSessions.filter(session => {
       // Tutor filter
       if (selectedTutor !== 'All' && session.tutor !== selectedTutor) {
         return false;
@@ -232,7 +241,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
 
           <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
             <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">Scheduled Sessions</span>
-            <span className="text-lg font-bold font-mono text-indigo-600 dark:text-indigo-400">{sessions.length}</span>
+            <span className="text-lg font-bold font-mono text-indigo-600 dark:text-indigo-400">{activeOneToOneSessions.length}</span>
             <span className="text-[10px] text-slate-400 block">total allocated</span>
           </div>
 
@@ -513,7 +522,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                           }}
                           className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-colors"
                         >
-                          View All Sessions ({sessions.length})
+                          View All Sessions ({activeOneToOneSessions.length})
                         </button>
                       )}
                       <button

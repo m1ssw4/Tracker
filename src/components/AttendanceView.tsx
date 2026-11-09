@@ -275,15 +275,30 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                   </span>
                 </div>
 
-                {focusedSession.attendance?.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">
-                    No students tagged with this class. Use the Students tab to tag students.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {focusedSession.attendance.map((entry) => {
-                      const studentDetail = allStudents.find(s => s.id === entry.studentId);
-                      return (
+                {(() => {
+                  const activeAttendance = (focusedSession.attendance || []).filter(entry => {
+                    const stu = allStudents.find(s => s.id === entry.studentId);
+                    if (!stu) return false;
+                    const normSessTag = normalizeTag(focusedSession.classTag);
+                    return stu.tags.some(t => {
+                      const normT = normalizeTag(t);
+                      return normT === normSessTag || normT.includes(normSessTag) || normSessTag.includes(normT);
+                    });
+                  });
+
+                  if (activeAttendance.length === 0) {
+                    return (
+                      <p className="text-xs text-slate-500 py-6 text-center">
+                        No students currently tagged with this class. Use the Students tab to tag students.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      {activeAttendance.map((entry) => {
+                        const studentDetail = allStudents.find(s => s.id === entry.studentId);
+                        return (
                         <div
                           key={entry.studentId}
                           className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 text-xs"
@@ -325,7 +340,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       );
                     })}
                   </div>
-                )}
+                );
+              })()}
               </div>
 
             </>
