@@ -140,8 +140,9 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
       'foundation maths + exam prep sessions'
     ];
 
-    // Queries to discover all group classes, subjects, cohorts & enrolled students in GHL
+    // Queries to discover all group classes, subjects, cohorts & 1:1 clients in GHL
     const SEARCH_QUERIES = [
+      '1:1',
       'group student',
       'literature',
       'chemistry',
@@ -176,7 +177,7 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
       }
     };
 
-    // Parallel fetch across all targeted subject queries in GHL
+    // Parallel fetch across all targeted subject queries and 1:1 queries in GHL
     const queryResults = await Promise.all(SEARCH_QUERIES.map(q => fetchGhlQuery(q)));
     const allContactsMap = new Map<string, any>();
     queryResults.flat().forEach(c => {
@@ -186,11 +187,16 @@ app.get('/api/contacts', async (req: Request, res: Response) => {
     });
 
     const normalizeTagStr = (t: string) => t.toLowerCase().replace(/[`‘’]/g, "'").trim();
+    const isOneToOne = (cTags: string[]) => cTags.some(ct => 
+      ct.includes('1:1') || ct.includes('1-1') || ct.includes('121')
+    );
 
-    // Filter contacts with active class enrollments
+    // Filter contacts with active class enrollments OR 1:1 client tags
     const enrolledContacts = Array.from(allContactsMap.values()).filter((c: any) => {
       const cTags = (c.tags || []).map((t: string) => normalizeTagStr(t));
-      return TARGET_CLASS_TAGS.some(target => cTags.some((ct: string) => ct.includes(target)));
+      const hasGroup = TARGET_CLASS_TAGS.some(target => cTags.some((ct: string) => ct.includes(target)));
+      const hasOneToOne = isOneToOne(cTags);
+      return hasGroup || hasOneToOne;
     });
 
     const avatarColors = [

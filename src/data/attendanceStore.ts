@@ -2,10 +2,10 @@ import { LessonSession, StudentAttendanceEntry, ApiConfig, Student, OneToOneSess
 import { TUTORING_CLASSES } from './classesData';
 import { INITIAL_STUDENTS, getStudentsByTag } from './mockStudents';
 
-const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v8';
+const STORAGE_KEY_SESSIONS = 'tutortrack_sessions_2627_ghl_v9';
 const STORAGE_KEY_API_CONFIG = 'tutortrack_api_config_2627_v1';
-const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v8';
-const STORAGE_KEY_ONE_TO_ONE = 'tutortrack_one_to_one_sessions_2627_v2';
+const STORAGE_KEY_STUDENTS = 'tutortrack_students_2627_ghl_v9';
+const STORAGE_KEY_ONE_TO_ONE = 'tutortrack_one_to_one_sessions_2627_v3';
 
 // Map day of week to date offset relative to Monday 2026-11-02 (Past week) and Monday 2026-11-09 (Current/Upcoming week)
 const DAY_OFFSETS: Record<string, number> = {
@@ -176,7 +176,7 @@ export function saveSessions(sessions: LessonSession[]): void {
 
 export function loadSavedStudents(): Student[] {
   try {
-    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4', 'tutortrack_students_2627_ghl_v5', 'tutortrack_students_2627_ghl_v6', 'tutortrack_students_2627_ghl_v7'].forEach(k => {
+    ['tutortrack_students_2627_ghl_v1', 'tutortrack_students_2627_ghl_v2', 'tutortrack_students_2627_ghl_v3', 'tutortrack_students_2627_ghl_v4', 'tutortrack_students_2627_ghl_v5', 'tutortrack_students_2627_ghl_v6', 'tutortrack_students_2627_ghl_v7', 'tutortrack_students_2627_ghl_v8'].forEach(k => {
       try { localStorage.removeItem(k); } catch (_) {}
     });
 
@@ -184,7 +184,8 @@ export function loadSavedStudents(): Student[] {
     if (raw) {
       const parsed: Student[] = JSON.parse(raw);
       const hasStaleSetter = parsed.some(s => /rebecca\s+collins/i.test(s.name));
-      if (!hasStaleSetter && parsed.length > 0) {
+      // Ensure we have at least the full roster count
+      if (!hasStaleSetter && parsed.length >= INITIAL_STUDENTS.length) {
         return parsed;
       }
     }
@@ -251,10 +252,10 @@ export function generateInitialOneToOneSessions(): OneToOneSession[] {
       id: '121-hailey-mon-1',
       studentId: 'xTmiNJ49FpZcR66TKG2l',
       studentName: 'Hailey',
-      parentName: 'faith',
+      parentName: 'faith hikwa',
       parentPhone: '+447472882222',
       parentEmail: 'fthkhumalo@yahoo.co.uk',
-      studentTag: "'26-'27 1:1 student",
+      studentTag: "'26-'27 1:1 client",
       date: '2026-11-09',
       dayOfWeek: 'Monday',
       startTime: '16:30',
@@ -269,13 +270,34 @@ export function generateInitialOneToOneSessions(): OneToOneSession[] {
       notes: 'Focus on titration formulas and exam question drills.'
     },
     {
+      id: '121-harry-mon-1',
+      studentId: 'IzD5Zng5FCUQxYkHGSEq',
+      studentName: 'Harry',
+      parentName: 'sarah tilley',
+      parentPhone: '+447865090254',
+      parentEmail: 'sarahtilley@live.co.uk',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-09',
+      dayOfWeek: 'Monday',
+      startTime: '18:00',
+      endTime: '19:00',
+      tutor: 'Richard "Rich" Handley',
+      subject: 'Chemistry',
+      topic: 'Electrolysis of Aqueous Solutions & Half Equations',
+      meetingLink: 'https://meet.google.com/smarta-1on1-chem',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Predicted grade 8 focus on higher tier quantitative questions.'
+    },
+    {
       id: '121-charlie-mon-1',
       studentId: 'JI4ANEmMpLvynyA7j4jS',
       studentName: 'Charlie',
-      parentName: 'clancy',
+      parentName: 'clancy marschner',
       parentPhone: '+447548437821',
       parentEmail: 'clancymarschner@gmail.com',
-      studentTag: "’25’26 1:1 client",
+      studentTag: "'26-'27 1:1 client",
       date: '2026-11-09',
       dayOfWeek: 'Monday',
       startTime: '17:45',
@@ -290,31 +312,52 @@ export function generateInitialOneToOneSessions(): OneToOneSession[] {
       notes: 'Preparing for November mock assessments.'
     },
     {
-      id: '121-ethan-tue-1',
-      studentId: 'K9U0vKpCdpPCbrHqNVL1',
-      studentName: 'Ethan Reed',
-      parentName: 'victoria',
-      parentPhone: '+447817361605',
-      parentEmail: 'vickireed@btinternet.com',
-      studentTag: "’25’26 1:1 client",
+      id: '121-kiana-tue-1',
+      studentId: 'iqLn48H8WSEhEUCoSUk9',
+      studentName: 'Kiana',
+      parentName: 'ghazaleh hajreza tehrani',
+      parentPhone: '+447919037036',
+      parentEmail: 'kiana.tabei@gmail.com',
+      studentTag: "'26-'27 1:1 client",
       date: '2026-11-10',
       dayOfWeek: 'Tuesday',
       startTime: '16:00',
       endTime: '17:00',
-      tutor: 'Edwin Munoz',
-      subject: 'Science',
-      topic: 'Cell Biology & Active Transport',
-      meetingLink: 'https://meet.google.com/smarta-1on1-sci',
+      tutor: 'Kelly Barraclough-Dunn',
+      subject: 'Maths',
+      topic: 'Simultaneous Equations & Quadratic Graphs',
+      meetingLink: 'https://meet.google.com/smarta-1on1-maths',
       status: 'scheduled',
       attendanceStatus: 'present',
       isAttendanceSubmitted: false,
-      notes: 'Reinforce required practical methodology.'
+      notes: 'Aiming for grades 8/9; building independent problem solving.'
+    },
+    {
+      id: '121-maya-tue-1',
+      studentId: 'XSGhmx9Q3AnDtGjX8zdF',
+      studentName: 'Maya',
+      parentName: 'malgorzata balewska',
+      parentPhone: '+447894221997',
+      parentEmail: 'balewska@btinternet.com',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-10',
+      dayOfWeek: 'Tuesday',
+      startTime: '17:15',
+      endTime: '18:15',
+      tutor: 'Toni Mann',
+      subject: 'English',
+      topic: 'Macbeth & Jekyll and Hyde Key Theme Analysis',
+      meetingLink: 'https://meet.google.com/smarta-1on1-eng',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Focus on sophisticated literary vocabulary & 30-mark essay structure.'
     },
     {
       id: '121-shay-wed-1',
       studentId: 'FnB2Cjsv5kdI1ANT6iw5',
       studentName: 'Shay',
-      parentName: 'tejal',
+      parentName: 'tejal patel',
       parentPhone: '+447961186946',
       parentEmail: 'patelt185@gmail.com',
       studentTag: "'26-'27 1:1 client",
@@ -331,15 +374,120 @@ export function generateInitialOneToOneSessions(): OneToOneSession[] {
       isAttendanceSubmitted: false,
       notes: 'Exam technique on 6-mark response structure.'
     },
+    {
+      id: '121-sienna-wed-1',
+      studentId: 'LED6cXkn3ybMbBsGzEWO',
+      studentName: 'Sienna',
+      parentName: 'steven leith',
+      parentPhone: '+447816295838',
+      parentEmail: 'sleith@talktalk.net',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-11',
+      dayOfWeek: 'Wednesday',
+      startTime: '18:15',
+      endTime: '19:15',
+      tutor: 'Gemma Louise Koksal',
+      subject: 'English',
+      topic: 'An Inspector Calls: Priestley’s Social Message',
+      meetingLink: 'https://meet.google.com/smarta-1on1-eng',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Developing high-level contextual critique.'
+    },
+    {
+      id: '121-amy-thu-1',
+      studentId: 'KDqozTvqbpR0F1R1mkIB',
+      studentName: 'Amy',
+      parentName: 'lucy hardwidge',
+      parentPhone: '+447738473330',
+      parentEmail: 'lucyhardwidge@hotmail.com',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-12',
+      dayOfWeek: 'Thursday',
+      startTime: '16:00',
+      endTime: '17:00',
+      tutor: 'Edwin Munoz',
+      subject: 'Science',
+      topic: 'Inheritance, Punnett Squares & Genetic Crosses',
+      meetingLink: 'https://meet.google.com/smarta-1on1-sci',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Reviewing genetics key terms and exam diagram questions.'
+    },
+    {
+      id: '121-nicola-thu-1',
+      studentId: 'sNiSNcjaTLh5pir0NMaV',
+      studentName: 'Nicola',
+      parentName: 'monika zbrog',
+      parentPhone: '+447912510376',
+      parentEmail: 'monikazbrog@gmail.com',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-12',
+      dayOfWeek: 'Thursday',
+      startTime: '17:30',
+      endTime: '18:30',
+      tutor: 'Jake Sewell',
+      subject: 'Maths',
+      topic: 'Trigonometry & Pythagoras in 3D Shapes',
+      meetingLink: 'https://meet.google.com/smarta-1on1-maths',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Focus on 4-mark geometry questions.'
+    },
+    {
+      id: '121-michelle-fri-1',
+      studentId: 'J546Ukdi4t9rjzWZroRr',
+      studentName: 'Michelle',
+      parentName: 'temi olurin-oniyelu',
+      parentPhone: '+447521037922',
+      parentEmail: 'temiolurin@yahoo.co.uk',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-13',
+      dayOfWeek: 'Friday',
+      startTime: '16:30',
+      endTime: '17:30',
+      tutor: 'Kelly Barraclough-Dunn',
+      subject: 'Science',
+      topic: 'Atomic Structure & Chemical Bonding',
+      meetingLink: 'https://meet.google.com/smarta-1on1-sci',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Covalent vs Ionic bonding dot-and-cross diagrams.'
+    },
+    {
+      id: '121-chloe-fri-1',
+      studentId: 'Rbspi0IP1p6cpxsyxm72',
+      studentName: 'Chloe',
+      parentName: 'helen ellam',
+      parentPhone: '+447887854544',
+      parentEmail: 'helenellam@live.co.uk',
+      studentTag: "'26-'27 1:1 client",
+      date: '2026-11-13',
+      dayOfWeek: 'Friday',
+      startTime: '17:45',
+      endTime: '18:45',
+      tutor: 'Richard "Rich" Handley',
+      subject: 'Chemistry',
+      topic: 'Acids, Alkalis & Neutralisation Reactions',
+      meetingLink: 'https://meet.google.com/smarta-1on1-chem',
+      status: 'scheduled',
+      attendanceStatus: 'present',
+      isAttendanceSubmitted: false,
+      notes: 'Required practical write-up drills.'
+    },
     // Past completed sessions
     {
       id: '121-hailey-past-1',
       studentId: 'xTmiNJ49FpZcR66TKG2l',
       studentName: 'Hailey',
-      parentName: 'faith',
+      parentName: 'faith hikwa',
       parentPhone: '+447472882222',
       parentEmail: 'fthkhumalo@yahoo.co.uk',
-      studentTag: "'26-'27 1:1 student",
+      studentTag: "'26-'27 1:1 client",
       date: '2026-11-02',
       dayOfWeek: 'Monday',
       startTime: '16:30',
@@ -357,10 +505,10 @@ export function generateInitialOneToOneSessions(): OneToOneSession[] {
       id: '121-charlie-past-1',
       studentId: 'JI4ANEmMpLvynyA7j4jS',
       studentName: 'Charlie',
-      parentName: 'clancy',
+      parentName: 'clancy marschner',
       parentPhone: '+447548437821',
       parentEmail: 'clancymarschner@gmail.com',
-      studentTag: "’25’26 1:1 client",
+      studentTag: "'26-'27 1:1 client",
       date: '2026-11-03',
       dayOfWeek: 'Tuesday',
       startTime: '17:45',
@@ -401,6 +549,10 @@ export function generateInitialOneToOneSessions(): OneToOneSession[] {
 
 export function loadSavedOneToOneSessions(): OneToOneSession[] {
   try {
+    ['tutortrack_one_to_one_sessions_2627_v1', 'tutortrack_one_to_one_sessions_2627_v2'].forEach(k => {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
+
     const raw = localStorage.getItem(STORAGE_KEY_ONE_TO_ONE);
     if (raw) {
       const parsed = JSON.parse(raw);

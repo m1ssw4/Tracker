@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { OneToOneSession, Student, AttendanceStatus } from '../types';
 import { TUTOR_ROSTER } from '../data/attendanceStore';
-import { isOneToOneStudent, getStudentOneToOneTag, isOneToOneTag } from '../data/mockStudents';
+import { isOneToOneStudent, getStudentOneToOneTag, isOneToOneTag, is2627OneToOneStudent } from '../data/mockStudents';
 import { ScheduleOneToOneModal } from './ScheduleOneToOneModal';
 import { SendMessageModal, MessageRecipient } from './SendMessageModal';
 import { 
@@ -55,6 +55,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'scheduled' | 'completed'>('All');
+  const [rosterCohort, setRosterCohort] = useState<'2627' | 'all'>('2627');
 
   // Modals state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -69,9 +70,14 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
   const [attendanceNotice, setAttendanceNotice] = useState<string | null>(null);
   const [isSubmittingNote, setIsSubmittingNote] = useState<string | null>(null);
 
-  // All 1:1 students detected in CRM
+  // All valid 1:1 students detected in CRM
   const oneToOneStudents = useMemo(() => {
     return allStudents.filter(isOneToOneStudent);
+  }, [allStudents]);
+
+  // Current '26-'27 1:1 Clients (exactly 26 active students)
+  const active2627Students = useMemo(() => {
+    return allStudents.filter(is2627OneToOneStudent);
   }, [allStudents]);
 
   // Filtered 1:1 sessions
@@ -217,9 +223,9 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
         {/* KPI Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">1:1 Clients Enrolled</span>
-            <span className="text-lg font-bold font-mono text-slate-900 dark:text-white">{oneToOneStudents.length}</span>
-            <span className="text-[10px] text-slate-400 block">via CRM 1:1 tags</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">'26-'27 1:1 Clients</span>
+            <span className="text-lg font-bold font-mono text-slate-900 dark:text-white">{active2627Students.length}</span>
+            <span className="text-[10px] text-slate-400 block">active students in CRM</span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
@@ -338,18 +344,16 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
           {/* Tag Filter */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              1:1 CRM Tag:
+              1:1 Cohort Filter:
             </label>
             <select
               value={selectedTagFilter}
               onChange={(e) => setSelectedTagFilter(e.target.value)}
               className="w-full min-h-[38px] px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono truncate"
             >
-              <option value="All">All 1:1 Tags</option>
-              <option value="'26-'27 1:1 student">'26-'27 1:1 student</option>
-              <option value="’25’26 1:1 client">’25’26 1:1 client</option>
-              <option value="'26-'27 1:1 client">'26-'27 1:1 client</option>
-              <option value="1:1 clients '25-26'">1:1 clients '25-26'</option>
+              <option value="All">All 1:1 Cohorts</option>
+              <option value="'26-'27 1:1">'26-'27 1:1 Clients ({active2627Students.length} students)</option>
+              <option value="’25’26 1:1">’25’26 1:1 Clients</option>
             </select>
           </div>
 
@@ -471,12 +475,11 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
 
         {/* The Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs min-w-[780px]">
+          <table className="w-full text-left text-xs min-w-[720px]">
             <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800 font-semibold">
               <tr>
                 <th className="py-2.5 px-3">Date & Time</th>
                 <th className="py-2.5 px-3">1:1 Student</th>
-                <th className="py-2.5 px-3">CRM 1:1 Tag</th>
                 <th className="py-2.5 px-3">Assigned Tutor</th>
                 <th className="py-2.5 px-3">Subject & Focus</th>
                 <th className="py-2.5 px-3">Attendance</th>
@@ -486,7 +489,7 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredSessions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                  <td colSpan={6} className="py-12 text-center text-slate-500">
                     <p className="font-semibold text-slate-800 dark:text-slate-200">No 1:1 sessions found</p>
                     <p className="text-xs text-slate-400 mt-1">
                       {selectedTutor !== 'All' || selectedDate
@@ -554,23 +557,6 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                             Parent: {studentDetail.parentName} ({studentDetail.parentPhone})
                           </p>
                         )}
-                      </td>
-
-                      {/* CRM 1:1 Tag */}
-                      <td className="py-3 px-3 align-top">
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-[11px] text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200/80 dark:border-indigo-800/80 truncate max-w-[170px]" title={session.studentTag}>
-                            {session.studentTag}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyTag(session.studentTag)}
-                            className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-0.5"
-                            title="Copy tag"
-                          >
-                            {copiedTag === session.studentTag ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                          </button>
-                        </div>
                       </td>
 
                       {/* Assigned Tutor */}
@@ -712,23 +698,49 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
 
       {/* 1:1 Client Roster Grid Section */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Users className="w-4 h-4 text-indigo-500" />
-              <span>Recognized 1:1 Client Roster ({oneToOneStudents.length})</span>
+              <span>
+                {rosterCohort === '2627' ? `'26-'27 1:1 Clients (${active2627Students.length})` : `All 1:1 Clients (${oneToOneStudents.length})`}
+              </span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Students identified by tags: <code className="font-mono text-slate-700 dark:text-slate-300">'26-'27 1:1 student</code> or <code className="font-mono text-slate-700 dark:text-slate-300">’25’26 1:1 client</code>
+              {rosterCohort === '2627' 
+                ? "Active '26-'27 1:1 cohort synchronized directly with GoHighLevel CRM." 
+                : "Combined 1:1 roster ('26-'27 & ’25’26 cohorts)."}
             </p>
           </div>
-          <span className="text-xs font-mono text-slate-400">
-            {oneToOneStudents.length} Students in CRM
-          </span>
+
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+            <button
+              type="button"
+              onClick={() => setRosterCohort('2627')}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                rosterCohort === '2627'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              '26-'27 Active ({active2627Students.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setRosterCohort('all')}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                rosterCohort === 'all'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              All Clients ({oneToOneStudents.length})
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {oneToOneStudents.map(student => {
+          {(rosterCohort === '2627' ? active2627Students : oneToOneStudents).map(student => {
             const studentSessions = sessions.filter(s => s.studentId === student.id);
             const primaryTag = getStudentOneToOneTag(student);
 
