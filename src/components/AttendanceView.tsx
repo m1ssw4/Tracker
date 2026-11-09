@@ -102,52 +102,55 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         
         {/* Search */}
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative flex-1 w-full">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search session by name, tag or tutor..."
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs"
+            className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs min-h-[36px]"
           />
         </div>
 
-        {/* Tag filter dropdown */}
-        <div className="flex items-center gap-2">
-          <span className="text-slate-500 dark:text-slate-400">Tag:</span>
-          <select
-            value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-xs max-w-[220px] truncate"
-          >
-            <option value="All">All 27 Tags</option>
-            {allTags.map(t => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Status filter */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-          {(['All', 'completed', 'scheduled'] as const).map(st => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1 rounded-md transition-colors ${
-                statusFilter === st
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-medium shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+        {/* Tag filter dropdown & Status */}
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {/* Tag filter dropdown */}
+          <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+            <span className="text-slate-500 dark:text-slate-400 hidden sm:inline">Tag:</span>
+            <select
+              value={selectedTag}
+              onChange={(e) => setSelectedTag(e.target.value)}
+              className="w-full sm:w-auto px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-xs sm:max-w-[220px] truncate min-h-[36px]"
             >
-              {st === 'All' ? 'All' : st === 'completed' ? 'Logged Registers' : 'Upcoming / Pending'}
-            </button>
-          ))}
+              <option value="All">All 27 Tags</option>
+              {allTags.map(t => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status filter */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+            {(['All', 'completed', 'scheduled'] as const).map(st => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`min-h-[32px] px-2.5 sm:px-3 py-1 rounded-md transition-colors ${
+                  statusFilter === st
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-medium shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {st === 'All' ? 'All' : st === 'completed' ? 'Logged' : 'Upcoming'}
+              </button>
+            ))}
+          </div>
         </div>
 
       </div>
@@ -250,7 +253,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenAttendanceModal(focusedSession)}
-                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors shrink-0 flex items-center gap-1.5"
+                  className="w-full sm:w-auto min-h-[40px] px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors shrink-0 flex items-center justify-center gap-1.5"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
                   <span>{focusedSession.isAttendanceSubmitted ? 'Update Attendance' : 'Take Roll Call'}</span>

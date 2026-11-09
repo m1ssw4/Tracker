@@ -308,13 +308,13 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         </div>
 
         {/* Filter by tag dropdown */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-500 dark:text-slate-400">Filter by Class Tag:</span>
             <select
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono max-w-xs truncate"
+              className="w-full sm:w-auto min-h-[36px] px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono sm:max-w-xs truncate"
             >
               <option value="All">All Tags (Show All Students)</option>
               {allTags.map(t => (
@@ -326,7 +326,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             {tagFilter !== 'All' && (
               <button
                 onClick={() => setTagFilter('All')}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline min-h-[36px] flex items-center"
               >
                 Clear Tag Filter
               </button>
@@ -461,19 +461,19 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                 </div>
 
                 {/* Bottom Action Footer */}
-                <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-t border-slate-100 dark:border-slate-800 text-xs">
                   <span className="text-slate-500 dark:text-slate-400">
                     {stats.total} sessions logged · {stats.late} late · {stats.absent} absences
                   </span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <a
                       href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${stu.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 font-semibold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
+                      className="min-h-[34px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center gap-1 font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition-colors"
                       title="Open contact profile in GoHighLevel CRM"
                     >
-                      <ExternalLink className="w-3.5 h-3.5 text-indigo-500" /> GHL Contact
+                      <ExternalLink className="w-3.5 h-3.5 text-indigo-500" /> <span>GHL Contact</span>
                     </a>
                     <button
                       type="button"
@@ -484,16 +484,16 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                         phone: stu.parentPhone,
                         email: stu.email
                       })}
-                      className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                      className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 font-semibold flex items-center gap-1 transition-colors"
                     >
-                      <MessageSquare className="w-3.5 h-3.5" /> Send SMS / Email
+                      <MessageSquare className="w-3.5 h-3.5" /> <span>Message</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSelectedStudentForHistory(stu)}
-                      className="flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                      className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-semibold flex items-center gap-1 transition-colors"
                     >
-                      <History className="w-3.5 h-3.5" /> Full Attendance Log
+                      <History className="w-3.5 h-3.5" /> <span>Attendance Log</span>
                     </button>
                   </div>
                 </div>
@@ -506,42 +506,42 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
 
       {/* Student Attendance History & GoHighLevel Notes Drawer */}
       {selectedStudentForHistory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
             
             {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">
                     {selectedStudentForHistory.name}
                   </h3>
                   <a
                     href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${selectedStudentForHistory.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors flex items-center gap-1"
+                    className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors flex items-center gap-1 shrink-0"
                     title="Open contact in GoHighLevel CRM"
                   >
                     <span>GHL: {selectedStudentForHistory.id}</span>
                     <ExternalLink className="w-3 h-3 text-indigo-500" />
                   </a>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                   Year {selectedStudentForHistory.yearGroup} · Parent: {selectedStudentForHistory.parentName} ({selectedStudentForHistory.parentPhone})
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                 <a
                   href={`https://app.smartaeducation.co.uk/v2/location/sIsXZz9eCc7dSBiVNzZj/contacts/detail/${selectedStudentForHistory.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                  className="min-h-[34px] px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs"
                   title="Open this contact record in GoHighLevel"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>Go to GHL Contact</span>
+                  <span>GHL Contact</span>
                 </a>
                 <button
                   type="button"
@@ -552,14 +552,14 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                     phone: selectedStudentForHistory.parentPhone,
                     email: selectedStudentForHistory.email
                   })}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                  className="min-h-[34px] px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Send SMS / Email</span>
+                  <span>Message</span>
                 </button>
                 <button
                   onClick={() => setSelectedStudentForHistory(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -567,7 +567,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             </div>
 
             {/* Sub-tabs: Attendance History vs GoHighLevel CRM Notes */}
-            <div className="px-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-4 text-xs font-medium">
+            <div className="px-4 sm:px-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-4 text-xs font-medium overflow-x-auto">
               <button
                 onClick={() => setDrawerTab('attendance')}
                 className={`py-3 flex items-center gap-1.5 border-b-2 transition-colors ${
@@ -894,11 +894,11 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setTagToRemoveConfirmation(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+                className="min-h-[40px] px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center"
               >
                 Cancel
               </button>
@@ -906,7 +906,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                 type="button"
                 disabled={activeTagAction !== null}
                 onClick={() => handleTriggerRemoveTag(tagToRemoveConfirmation.student, tagToRemoveConfirmation.tag)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-60"
+                className="min-h-[40px] px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-60"
               >
                 {activeTagAction !== null ? (
                   <>

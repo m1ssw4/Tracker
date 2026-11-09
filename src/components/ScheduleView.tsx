@@ -155,15 +155,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         </div>
 
         {/* Row 2: Category Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           
           {/* Category Tabs */}
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(['All', 'Year 11', 'Year 10', 'Exam Prep'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                className={`min-h-[36px] px-3 py-1.5 text-xs rounded-lg transition-colors ${
                   selectedCategory === cat
                     ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -175,15 +175,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </div>
 
           {/* Dropdown Filters: Specific Tag, Subject, Day */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
             
             {/* Tag Selector Dropdown */}
-            <div className="flex items-center gap-1">
+            <div className="col-span-2 sm:col-span-1 flex items-center gap-1">
               <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">Tag:</span>
               <select
                 value={selectedTagFilter}
                 onChange={(e) => setSelectedTagFilter(e.target.value)}
-                className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono max-w-[200px] truncate"
+                className="w-full sm:w-auto min-h-[36px] px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono sm:max-w-[200px] truncate"
               >
                 <option value="All">All 27 Tags</option>
                 {allTags.map((t) => (
@@ -198,7 +198,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value as Subject | 'All')}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="min-h-[36px] px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="All">All Subjects</option>
               <option value="Maths">Maths</option>
@@ -214,7 +214,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <select
               value={selectedDay}
               onChange={(e) => setSelectedDay(e.target.value as DayOfWeek | 'All')}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="min-h-[36px] px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="All">All Days</option>
               {daysList.map((d) => (
@@ -234,9 +234,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   setSelectedTagFilter('All');
                   setSearchQuery('');
                 }}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline px-1"
+                className="col-span-2 sm:col-span-1 min-h-[36px] text-xs text-indigo-600 dark:text-indigo-400 hover:underline px-2 py-1 flex items-center justify-center sm:justify-start"
               >
-                Reset
+                Reset Filters
               </button>
             )}
           </div>
@@ -554,7 +554,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
       {/* View 2: Weekly Timetable Grid */}
       {viewMode === 'timetable' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="overflow-x-auto pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 min-w-[280px] md:min-w-[720px]">
           {daysList.map((day) => {
             const daySessions = timetableByDay[day] || [];
             return (
@@ -612,6 +613,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 

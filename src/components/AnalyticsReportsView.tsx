@@ -190,20 +190,20 @@ export const AnalyticsReportsView: React.FC<AnalyticsReportsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
             onClick={() => window.print()}
-            className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+            className="flex-1 sm:flex-initial min-h-[40px] px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print Sheet</span>
           </button>
           <button
             onClick={exportCsv}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center gap-1.5"
+            className="flex-1 sm:flex-initial min-h-[40px] px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV Report</span>
+            <span>Export CSV</span>
           </button>
         </div>
       </div>

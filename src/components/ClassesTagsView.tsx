@@ -160,15 +160,15 @@ export const ClassesTagsView: React.FC<ClassesTagsViewProps> = ({
         </div>
 
         {/* Category Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-1.5 flex-wrap">
             {(['All', 'Year 11', 'Year 10', 'Exam Prep'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                className={`min-h-[36px] px-3 py-1.5 text-xs rounded-lg transition-colors ${
                   selectedCategory === cat
-                    ? 'bg-indigo-600 text-white font-semibold'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
@@ -177,12 +177,12 @@ export const ClassesTagsView: React.FC<ClassesTagsViewProps> = ({
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <span className="text-xs text-slate-500 dark:text-slate-400">Subject:</span>
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="All">All Subjects</option>
               <option value="Chemistry">Chemistry</option>

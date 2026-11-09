@@ -41,23 +41,23 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4 md:gap-8">
         
         {/* Zone 1: Single text wordmark */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-sm shrink-0">
             T
           </div>
           <button
             onClick={() => onSelectTab('schedules')}
-            className="text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap text-left hover:opacity-90 transition-opacity"
+            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap text-left hover:opacity-90 transition-opacity"
           >
-            TutorTrack <span className="text-indigo-600 dark:text-indigo-400 font-medium text-sm ml-1">'26-'27</span>
+            TutorTrack <span className="text-indigo-600 dark:text-indigo-400 font-medium text-xs sm:text-sm ml-0.5 sm:ml-1">'26-'27</span>
           </button>
         </div>
 
-        {/* Zone 2: 4–5 clean single-line nav links */}
-        <nav className="hidden md:flex items-center gap-7 text-sm font-medium">
+        {/* Zone 2: 4–5 clean single-line nav links for desktop */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-7 text-sm font-medium">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -80,23 +80,24 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
 
         {/* Zone 3: Primary Action + Theme Toggle */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {onSyncCrm && (
             <button
               onClick={onSyncCrm}
               disabled={isSyncingCrm}
               title="Real-time live sync with GoHighLevel CRM"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all whitespace-nowrap disabled:opacity-60"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all whitespace-nowrap disabled:opacity-60"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 ${isSyncingCrm ? 'animate-spin' : ''}`} />
-              <span>{isSyncingCrm ? 'Syncing...' : 'Sync CRM'}</span>
+              <span className="hidden sm:inline">{isSyncingCrm ? 'Syncing...' : 'Sync CRM'}</span>
+              <span className="sm:hidden inline">{isSyncingCrm ? '...' : 'Sync'}</span>
             </button>
           )}
 
           <button
             onClick={onToggleTheme}
             aria-label="Toggle theme"
-            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1.5 sm:p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
@@ -105,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenAdminModal}
               title={isAdminUnlocked ? "Admin Mode Active (API Connected is visible) - Click to manage or lock" : "Admin Protected - Click to enter passkey to reveal API Connected option"}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap ${
                 isAdminUnlocked
                   ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40'
                   : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
@@ -116,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
               ) : (
                 <Lock className="w-3.5 h-3.5 text-slate-500" />
               )}
-              <span>{isAdminUnlocked ? 'Admin Mode' : 'Admin'}</span>
+              <span className="hidden sm:inline">{isAdminUnlocked ? 'Admin Mode' : 'Admin'}</span>
             </button>
           )}
 
@@ -125,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenApiModal}
               title="API Integration Settings & Diagnostics (Admin Only)"
-              className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap animate-fade-in ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all whitespace-nowrap animate-fade-in ${
                 isApiConnected
                   ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
                   : 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent shadow-sm'
@@ -136,28 +137,32 @@ export const Header: React.FC<HeaderProps> = ({
               ) : (
                 <Key className="w-3.5 h-3.5 shrink-0" />
               )}
-              <span>{isApiConnected ? 'API Connected' : 'Connect API Key'}</span>
+              <span className="hidden sm:inline">{isApiConnected ? 'API Connected' : 'Connect API Key'}</span>
+              <span className="sm:hidden inline">API</span>
             </button>
           )}
         </div>
 
       </div>
 
-      {/* Mobile nav bar */}
-      <div className="md:hidden border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between overflow-x-auto gap-2">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSelectTab(item.id)}
-            className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap ${
-              activeTab === item.id
-                ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-semibold'
-                : 'text-slate-600 dark:text-slate-400'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+      {/* Mobile nav bar - Touch-friendly scrollable bar with active tab pills */}
+      <div className="md:hidden border-t border-slate-200 dark:border-slate-800 px-3 py-1.5 flex items-center overflow-x-auto gap-1.5 scroll-smooth no-scrollbar">
+        {navItems.map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelectTab(item.id)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap min-h-[34px] flex items-center transition-all shrink-0 ${
+                isActive
+                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
       </div>
     </header>
   );
