@@ -4,6 +4,7 @@ import { TUTOR_ROSTER } from '../data/attendanceStore';
 import { isOneToOneStudent, getStudentOneToOneTag, isOneToOneTag, is2627OneToOneStudent } from '../data/mockStudents';
 import { ScheduleOneToOneModal } from './ScheduleOneToOneModal';
 import { SendMessageModal, MessageRecipient } from './SendMessageModal';
+import { StartSessionModal } from './StartSessionModal';
 import { 
   Calendar, 
   Clock, 
@@ -25,7 +26,8 @@ import {
   Users,
   ShieldCheck,
   RefreshCw,
-  X
+  X,
+  Send
 } from 'lucide-react';
 
 interface OneToOneViewProps {
@@ -61,10 +63,11 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<OneToOneSession | null>(null);
   const [preselectedStudent, setPreselectedStudent] = useState<Student | null>(null);
+  const [startSessionTarget, setStartSessionTarget] = useState<OneToOneSession | null>(null);
   const [messageTarget, setMessageTarget] = useState<{
     recipient: MessageRecipient;
-    sessionContext: { className: string; date: string; time?: string; tutor?: string };
-    initialTemplate?: 'absence' | 'late' | 'reminder' | 'custom';
+    sessionContext: { className: string; date: string; time?: string; tutor?: string; meetingLink?: string };
+    initialTemplate?: 'starting' | 'absence' | 'late' | 'reminder' | 'custom';
   } | null>(null);
   
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
@@ -113,8 +116,14 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
       }
 
       // Status filter
-      if (statusFilter !== 'All' && session.status !== statusFilter) {
-        return false;
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'scheduled') {
+          if (session.status !== 'scheduled' && session.status !== 'in_progress') {
+            return false;
+          }
+        } else if (session.status !== statusFilter) {
+          return false;
+        }
       }
 
       // Search query
@@ -561,9 +570,11 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                         <span className={`inline-block mt-1 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${
                           session.status === 'completed'
                             ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            : session.status === 'in_progress'
+                            ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                             : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
                         }`}>
-                          {session.status}
+                          {session.status === 'in_progress' ? '● In Progress' : session.status}
                         </span>
                       </td>
 
@@ -610,17 +621,29 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                         <span className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                           {session.topic || 'Mastery and exam questions'}
                         </span>
-                        {session.meetingLink && (
-                          <a
-                            href={session.meetingLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline mt-0.5"
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {session.meetingLink && (
+                            <a
+                              href={session.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline"
+                            >
+                              <Video className="w-3 h-3" />
+                              <span>Classroom Link</span>
+                            </a>
+                          )}
+                          <span className="text-slate-300 dark:text-slate-600">·</span>
+                          <button
+                            type="button"
+                            onClick={() => setStartSessionTarget(session)}
+                            className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1 font-medium"
+                            title="Send classroom link to parent via SMS & Email"
                           >
-                            <Video className="w-3 h-3" />
-                            <span>Classroom Link</span>
-                          </a>
-                        )}
+                            <Send className="w-2.5 h-2.5" />
+                            <span>Send link to parent</span>
+                          </button>
+                        </div>
                       </td>
 
                       {/* Attendance Segmented Controls */}
@@ -660,7 +683,22 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                       {/* Actions */}
                       <td className="py-3 px-3 align-top text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Send Message */}
+                          {/* Start Session & Send Link Button */}
+                          <button
+                            type="button"
+                            onClick={() => setStartSessionTarget(session)}
+                            title="Start 1:1 Session: Send Classroom Link to Parent via SMS and Email"
+                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors flex items-center gap-1 shadow-2xs ${
+                              session.status === 'in_progress'
+                                ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 hover:bg-amber-100'
+                                : 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60'
+                            }`}
+                          >
+                            <Video className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                            <span>{session.status === 'in_progress' ? 'Resend Link' : 'Start & Send Link'}</span>
+                          </button>
+
+                          {/* Send Custom Message */}
                           <button
                             type="button"
                             onClick={() => {
@@ -677,9 +715,10 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
                                   className: `1:1 ${session.subject} with ${session.tutor}`,
                                   date: session.date,
                                   time: `${session.startTime} - ${session.endTime}`,
-                                  tutor: session.tutor
+                                  tutor: session.tutor,
+                                  meetingLink: session.meetingLink
                                 },
-                                initialTemplate: session.attendanceStatus === 'absent' ? 'absence' : session.attendanceStatus === 'late' ? 'late' : 'reminder'
+                                initialTemplate: 'starting'
                               });
                             }}
                             title="Send SMS / Email via GoHighLevel to Parent"
@@ -903,6 +942,22 @@ export const OneToOneView: React.FC<OneToOneViewProps> = ({
           classContext={messageTarget.sessionContext}
           initialType="SMS"
           initialTemplate={messageTarget.initialTemplate || 'reminder'}
+          isAdminUnlocked={isAdminUnlocked}
+        />
+      )}
+
+      {/* Start 1:1 Session & Send Link to Parent Modal */}
+      {startSessionTarget && (
+        <StartSessionModal
+          isOpen={!!startSessionTarget}
+          onClose={() => setStartSessionTarget(null)}
+          session={startSessionTarget}
+          studentDetail={allStudents.find(s => s.id === startSessionTarget.studentId)}
+          onSessionStarted={(updated) => {
+            onUpdateSession(updated);
+            setStartSessionTarget(null);
+          }}
+          onLogAttendanceNote={onLogAttendanceNote}
           isAdminUnlocked={isAdminUnlocked}
         />
       )}

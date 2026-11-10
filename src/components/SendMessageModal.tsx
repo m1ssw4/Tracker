@@ -18,9 +18,10 @@ interface SendMessageModalProps {
     date: string;
     time?: string;
     tutor?: string;
+    meetingLink?: string;
   };
   initialType?: 'SMS' | 'Email';
-  initialTemplate?: 'absence' | 'late' | 'reminder' | 'custom';
+  initialTemplate?: 'starting' | 'absence' | 'late' | 'reminder' | 'custom';
   minutesLate?: number;
   onSuccess?: (notice: string) => void;
   isAdminUnlocked?: boolean;
@@ -40,7 +41,7 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
   if (!isOpen || !recipient) return null;
 
   const [messageType, setMessageType] = useState<'SMS' | 'Email'>(initialType);
-  const [selectedTemplate, setSelectedTemplate] = useState<'absence' | 'late' | 'reminder' | 'custom'>(initialTemplate);
+  const [selectedTemplate, setSelectedTemplate] = useState<'starting' | 'absence' | 'late' | 'reminder' | 'custom'>(initialTemplate);
   const [subject, setSubject] = useState('');
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -51,11 +52,17 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
   const student = recipient.studentName && recipient.studentName.trim() ? recipient.studentName.trim() : 'your child';
   const className = classContext?.className || 'GCSE Tutoring Session';
   const dateStr = classContext?.date || 'today';
+  const meetingLink = classContext?.meetingLink || 'https://meet.google.com/smarta-1on1';
 
   // Helper to build content for a specific type and template without "Your Tutor"
-  const getContentFor = (type: 'SMS' | 'Email', template: 'absence' | 'late' | 'reminder' | 'custom') => {
+  const getContentFor = (type: 'SMS' | 'Email', template: 'starting' | 'absence' | 'late' | 'reminder' | 'custom') => {
     if (type === 'SMS') {
-      if (template === 'absence') {
+      if (template === 'starting') {
+        return {
+          subject: '',
+          body: `Hi ${parentGreeting}, ${student}'s live ${className} is starting now! Please join here: ${meetingLink} - SmartaTutoring`
+        };
+      } else if (template === 'absence') {
         return {
           subject: '',
           body: `Hi ${parentGreeting}, ${student} was marked absent from their ${className} session today (${dateStr}). Please reach out if you need recording access or catch-up materials. - SmartaTutoring`
@@ -78,7 +85,17 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
       }
     } else {
       // Email templates
-      if (template === 'absence') {
+      if (template === 'starting') {
+        return {
+          subject: `1:1 Session Starting Now: ${student} - ${className}`,
+          body: `<p>Dear ${parentGreeting},</p>
+<p><strong>${student}</strong>'s <strong>${className}</strong> session is starting now!</p>
+<p>Please click the button below to join the live virtual classroom:</p>
+<p style="margin: 20px 0;"><a href="${meetingLink}" target="_blank" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">👉 Join 1:1 Classroom Session</a></p>
+<p style="font-size: 13px; color: #64748b;">Classroom Link: <a href="${meetingLink}">${meetingLink}</a></p>
+<p>Best regards,<br/><strong>The SmartaTutoring Team</strong></p>`
+        };
+      } else if (template === 'absence') {
         return {
           subject: `Lesson Absence Notice: ${student} - ${className}`,
           body: `<p>Dear ${parentGreeting},</p>
@@ -300,8 +317,9 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
               <span>Choose Template:</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {[
+                { id: 'starting', label: '1:1 Starting Link' },
                 { id: 'absence', label: 'Absence Alert' },
                 { id: 'late', label: 'Late Arrival' },
                 { id: 'reminder', label: 'Class Reminder' },
